@@ -209,7 +209,7 @@ export default function Portfolio() {
   };
 
   return (
-    <div style={{ background: "#111827", minHeight: "100vh", color: "#e2e8f0" }}>
+    <div style={{ background: "#111827", minHeight: "100vh", color: "#e2e8f0", width: "100%" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500&display=swap');
 
