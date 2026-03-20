@@ -2,6 +2,14 @@ import { useState, useEffect, useRef } from "react";
 
 const PROJECTS = [
   {
+    name: "GenAI Dockerfile Generator",
+    subtitle: "Internal Tool · Python + LLaMA3",
+    desc: "A CLI that generates production-ready Dockerfiles using Python, Ollama, and LLaMA3. Cut manual config errors by 60%. An AI agent that understands your stack and writes the boilerplate so you don't have to.",
+    tags: ["Python", "LLaMA3", "Ollama", "GenAI", "Docker"],
+    period: "2024",
+    icon: "🤖",
+  },
+  {
     name: "Aslan",
     subtitle: "Multiplayer Gaming Platform · AWS",
     desc: "Full infra ownership on AWS. Ansible playbooks for zero-touch environment setup — Node.js, Docker, GitLab deploys. Real-time metrics via Prometheus, Grafana, and Zabbix. On-call runbooks that actually got used at 3am.",
@@ -24,14 +32,6 @@ const PROJECTS = [
     tags: ["Azure DevOps", "Cloudflare WAF", "PM2", "MongoDB", "Node.js"],
     period: "Apr 2024 – 2025",
     icon: "🔐",
-  },
-  {
-    name: "GenAI Dockerfile Generator",
-    subtitle: "Internal Tool · Python + LLaMA3",
-    desc: "A CLI that generates production-ready Dockerfiles using Python, Ollama, and LLaMA3. Cut manual config errors by 60%. An AI agent that understands your stack and writes the boilerplate so you don't have to.",
-    tags: ["Python", "LLaMA3", "Ollama", "GenAI", "Docker"],
-    period: "2024",
-    icon: "🤖",
   },
   {
     name: "Ephemeral Env CLI",
@@ -75,6 +75,7 @@ const WORK = [
 ];
 
 const STACK = [
+  { cat: "AI / GenAI", items: ["Ollama", "LLaMA3", "OpenAI API", "LLM", "Prompt Engineering"], icon: "🤖" },
   { cat: "Cloud", items: ["AWS", "Azure", "GCP"], icon: "☁️" },
   { cat: "Containers", items: ["Docker", "Kubernetes", "Helm", "PM2"], icon: "📦" },
   { cat: "CI / CD", items: ["Jenkins", "GitLab CI", "Azure DevOps"], icon: "🔄" },
@@ -104,17 +105,6 @@ const MISC = [
   },
 ];
 
-const MOMENTS = [
-  { icon: "🚀", label: "First prod deploy at Block-Stars" },
-  { icon: "🎮", label: "Aslan gaming platform went live" },
-  { icon: "🔐", label: "AIW/TRIA crypto wallet infra" },
-  { icon: "🔥", label: "3AM MongoDB CPU spike — fixed" },
-  { icon: "📊", label: "Kibana with zero blind spots" },
-  { icon: "🤖", label: "GenAI Dockerfile gen — shipped" },
-  { icon: "☁️", label: "AWS multi-account setup done" },
-  { icon: "🛠️", label: "NIDEC RHEL — stable & running" },
-];
-
 const OFFSCREEN = [
   { icon: "🏍️", title: "Weekend Rides", desc: "Out on the bike every weekend. Long routes, open roads, no Slack notifications." },
   { icon: "🔧", title: "DIY Maintenance", desc: "I do my own servicing and repairs. Diagnosing a bike problem isn't too different from debugging prod." },
@@ -122,14 +112,31 @@ const OFFSCREEN = [
 ];
 
 const STATS = [
-  { num: "2+", label: "Years in Prod" },
+  { num: "3", label: "Years in Prod" },
   { num: "40%", label: "Faster Deploys" },
   { num: "60%", label: "Faster Incidents" },
   { num: "3", label: "Platforms Owned" },
 ];
 
+// Moved outside component to avoid re-creation on every render
+const CMDS = [
+  "kubectl get pods --all-namespaces",
+  "terraform apply -auto-approve",
+  "ansible-playbook deploy.yml -i prod",
+  "docker stats --no-stream",
+];
+
 function AccordionItem({ q, a }) {
   const [open, setOpen] = useState(false);
+  const contentRef = useRef(null);
+  const [contentHeight, setContentHeight] = useState(0);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      setContentHeight(contentRef.current.scrollHeight);
+    }
+  }, [open, a]);
+
   return (
     <div style={{
       background: open ? "rgba(99,179,237,0.05)" : "rgba(255,255,255,0.025)",
@@ -157,7 +164,14 @@ function AccordionItem({ q, a }) {
           color: "#63b3ed", lineHeight: 1, flexShrink: 0,
         }}>+</span>
       </button>
-      <div style={{ maxHeight: open ? "300px" : 0, overflow: "hidden", transition: "max-height 0.35s ease" }}>
+      <div
+        ref={contentRef}
+        style={{
+          maxHeight: open ? `${contentHeight + 40}px` : 0,
+          overflow: "hidden",
+          transition: "max-height 0.35s ease",
+        }}
+      >
         <div style={{ padding: "0 20px 18px", borderTop: "1px solid rgba(99,179,237,0.08)" }}>
           <p style={{
             color: "#94a3b8", fontSize: "0.9rem",
@@ -177,15 +191,8 @@ export default function Portfolio() {
   const charRef = useRef(0);
   const timerRef = useRef(null);
 
-  const cmds = [
-    "kubectl get pods --all-namespaces",
-    "terraform apply -auto-approve",
-    "ansible-playbook deploy.yml -i prod",
-    "docker stats --no-stream",
-  ];
-
   useEffect(() => {
-    const cmd = cmds[cmdIdx];
+    const cmd = CMDS[cmdIdx];
     const tick = () => {
       charRef.current++;
       if (charRef.current <= cmd.length) {
@@ -195,7 +202,7 @@ export default function Portfolio() {
         timerRef.current = setTimeout(() => {
           charRef.current = 0;
           setTypedCmd("");
-          setCmdIdx(i => (i + 1) % cmds.length);
+          setCmdIdx(i => (i + 1) % CMDS.length);
         }, 2500);
       }
     };
@@ -209,14 +216,14 @@ export default function Portfolio() {
   };
 
   return (
-    <div style={{ background: "#111827", minHeight: "100vh", color: "#e2e8f0", width: "100%" }}>
+    <div style={{ background: "#111827", minHeight: "100vh", color: "#e2e8f0", width: "100%", overflowX: "hidden" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500&display=swap');
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html { scroll-behavior: smooth; }
+        html { scroll-behavior: smooth; overflow-x: hidden; }
 
-        body { background: #111827; }
+        body { background: #111827; overflow-x: hidden; }
 
         @keyframes blink    { 50% { opacity: 0; } }
         @keyframes fadeUp   { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
@@ -353,23 +360,6 @@ export default function Portfolio() {
         }
         .si:hover{color:#63b3ed;border-color:rgba(99,179,237,0.25);background:rgba(99,179,237,0.06);}
 
-        .track-outer{overflow:hidden;position:relative;}
-        .track-outer::before,.track-outer::after{
-          content:'';position:absolute;top:0;bottom:0;width:80px;z-index:2;pointer-events:none;
-        }
-        .track-outer::before{left:0;background:linear-gradient(90deg,#111827,transparent);}
-        .track-outer::after{right:0;background:linear-gradient(270deg,#111827,transparent);}
-        .track{display:flex;gap:12px;animation:marqueeX 26s linear infinite;width:max-content;}
-        .track:hover{animation-play-state:paused;}
-        .mcard{
-          width:162px;height:162px;border-radius:14px;
-          background:#1a2436;border:1px solid rgba(255,255,255,0.07);
-          display:flex;flex-direction:column;align-items:center;justify-content:center;
-          flex-shrink:0;padding:16px;text-align:center;
-          transition:border-color .2s,transform .2s;
-        }
-        .mcard:hover{border-color:rgba(99,179,237,0.22);transform:scale(1.04);}
-
         .off-card{
           background:#1a2436;border:1px solid rgba(255,255,255,0.07);
           border-radius:14px;padding:18px 20px;
@@ -391,22 +381,19 @@ export default function Portfolio() {
           margin:3.5rem 0;
         }
 
-        .nl-input{
-          background:#1a2436;border:1px solid rgba(255,255,255,0.08);
-          color:#f1f5f9;padding:11px 16px;
-          font-family:'Fira Code',monospace;font-size:.78rem;
-          border-radius:10px;outline:none;width:230px;transition:border-color .2s;
+        .cta-section{
+          text-align:center;padding:3rem 0 5.5rem;
         }
-        .nl-input:focus{border-color:rgba(99,179,237,0.4);box-shadow:0 0 0 3px rgba(99,179,237,0.07);}
-        .nl-input::placeholder{color:#2d4a6a;}
-        .nl-btn{
+        .cta-btn{
+          display:inline-block;
           background:linear-gradient(135deg,#63b3ed,#34d399);
-          color:#0d1520;border:none;padding:11px 24px;
-          font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;
-          font-weight:600;border-radius:10px;cursor:pointer;
-          margin-left:8px;transition:opacity .2s,transform .2s;
+          color:#0d1520;border:none;padding:14px 36px;
+          font-family:'Plus Jakarta Sans',sans-serif;font-size:.92rem;
+          font-weight:600;border-radius:12px;cursor:pointer;
+          text-decoration:none;letter-spacing:-.01em;
+          transition:opacity .2s,transform .2s,box-shadow .2s;
         }
-        .nl-btn:hover{opacity:.88;transform:translateY(-1px);}
+        .cta-btn:hover{opacity:.9;transform:translateY(-2px);box-shadow:0 12px 32px rgba(99,179,237,0.2);}
 
         .uptime-dot{
           width:8px;height:8px;border-radius:50%;background:#34d399;
@@ -418,338 +405,509 @@ export default function Portfolio() {
         ::-webkit-scrollbar{width:4px;}
         ::-webkit-scrollbar-track{background:#111827;}
         ::-webkit-scrollbar-thumb{background:rgba(99,179,237,0.2);border-radius:2px;}
+
+        /* SIDEBAR */
+        .sidebar{
+          width:200px;flex-shrink:0;
+          position:sticky;top:72px;
+          height:calc(100vh - 72px);
+          display:flex;flex-direction:column;gap:18px;
+          padding-top:5.5rem;
+        }
+        .sb-card{
+          background:#1a2436;
+          border:1px solid rgba(255,255,255,0.07);
+          border-radius:14px;padding:16px;
+        }
+        .sb-nav-btn{
+          display:block;width:100%;
+          background:none;border:none;
+          font-family:'Fira Code',monospace;
+          font-size:.68rem;letter-spacing:.07em;
+          color:#475569;cursor:pointer;
+          text-align:left;padding:7px 10px;
+          border-radius:8px;
+          transition:color .2s,background .2s;
+        }
+        .sb-nav-btn:hover{color:#e2e8f0;background:rgba(255,255,255,0.04);}
+        .sb-nav-btn.on{color:#63b3ed;background:rgba(99,179,237,0.07);}
+        .sb-link{
+          display:flex;align-items:center;gap:8px;
+          font-family:'Fira Code',monospace;font-size:.68rem;
+          color:#475569;text-decoration:none;letter-spacing:.05em;
+          padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);
+          transition:color .2s;
+        }
+        .sb-link:last-child{border-bottom:none;}
+        .sb-link:hover{color:#63b3ed;}
+
+        @media(max-width:900px){ .sidebar{display:none;} }
       `}</style>
 
       {/* SOFT GLOW */}
       <div style={{
-        position:"fixed",inset:0,zIndex:0,pointerEvents:"none",
-        background:`
+        position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
+        background: `
           radial-gradient(ellipse 70% 50% at 85% 0%,rgba(99,179,237,0.07) 0%,transparent 60%),
           radial-gradient(ellipse 50% 40% at 0% 100%,rgba(244,114,182,0.05) 0%,transparent 60%)
         `,
-      }}/>
+      }} />
 
-      <div style={{ maxWidth:"720px",margin:"0 auto",padding:"0 24px",position:"relative",zIndex:1 }}>
+      {/* FULL-WIDTH NAV */}
+      <nav style={{
+        position: "sticky", top: 0,
+        background: "rgba(17,24,39,0.9)",
+        backdropFilter: "blur(18px)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        padding: "16px 32px", zIndex: 100,
+        display: "flex", gap: "26px", alignItems: "center",
+      }}>
+        <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 700, fontSize: "1rem", color: "#63b3ed", marginRight: "4px", letterSpacing: "-.01em" }}>mj.</span>
+        {["about", "projects", "work", "stack", "more"].map(l => (
+          <button key={l} className={`nav-btn ${activeNav === l ? "on" : ""}`} onClick={() => goto(l)}>{l}</button>
+        ))}
+      </nav>
 
-        {/* NAV */}
-        <nav style={{
-          position:"sticky",top:0,
-          background:"rgba(17,24,39,0.9)",
-          backdropFilter:"blur(18px)",
-          borderBottom:"1px solid rgba(255,255,255,0.06)",
-          padding:"16px 0",zIndex:100,
-          display:"flex",gap:"26px",alignItems:"center",
-        }}>
-          <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:"1rem",color:"#63b3ed",marginRight:"4px",letterSpacing:"-.01em" }}>mj.</span>
-          {["about","projects","work","stack","misc"].map(l=>(
-            <button key={l} className={`nav-btn ${activeNav===l?"on":""}`} onClick={()=>goto(l)}>{l}</button>
-          ))}
-        </nav>
+      {/* TWO-COLUMN LAYOUT */}
+      <div style={{ display: "flex", maxWidth: "1080px", margin: "0 auto", padding: "0 24px", position: "relative", zIndex: 1, gap: "40px", alignItems: "flex-start" }}>
 
-        {/* HERO */}
-        <section id="about" style={{ paddingTop:"5.5rem" }}>
-          <div className="f1" style={{ display:"flex",alignItems:"center",gap:"8px",marginBottom:"1.6rem" }}>
-            <span className="uptime-dot"/>
-            <span style={{ fontFamily:"'Fira Code',monospace",color:"#2d4a6a",fontSize:".68rem",letterSpacing:".12em" }}>
-              SYSTEM ONLINE · OPEN TO WORK
-            </span>
-          </div>
+        {/* MAIN CONTENT */}
+        <div style={{ flex: "1", minWidth: 0, maxWidth: "720px" }}>
 
-          <h1 className="hero-name f1">
-            hi, i'm<br/><span className="grad">Manjunath.</span>
-          </h1>
+          {/* HERO */}
+          <section id="about" style={{ paddingTop: "5.5rem" }}>
+            <div className="f1" style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "1.6rem" }}>
+              <span className="uptime-dot" />
+              <span style={{ fontFamily: "'Fira Code',monospace", color: "#2d4a6a", fontSize: ".68rem", letterSpacing: ".12em" }}>
+                SYSTEM ONLINE · OPEN TO WORK
+              </span>
+            </div>
 
-          <div className="f2" style={{ marginTop:"1.5rem",marginBottom:"1.8rem" }}>
-            <div className="terminal">{typedCmd}<span className="tcur"/></div>
-          </div>
+            <h1 className="hero-name f1">
+              hi, i'm<br /><span className="grad">Manjunath.</span>
+            </h1>
 
-          <div className="f2" style={{ display:"flex",gap:"10px",flexWrap:"wrap",marginBottom:"2rem" }}>
-            {STATS.map(s=>(
-              <div key={s.label} className="stat-card">
-                <span className="stat-num">{s.num}</span>
-                <span className="stat-label">{s.label}</span>
+            <div className="f2" style={{ marginTop: "1.5rem", marginBottom: "1.8rem" }}>
+              <div className="terminal">{typedCmd}<span className="tcur" /></div>
+            </div>
+
+            <div className="f2" style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "2rem" }}>
+              {STATS.map(s => (
+                <div key={s.label} className="stat-card">
+                  <span className="stat-num">{s.num}</span>
+                  <span className="stat-label">{s.label}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="f3">
+              <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".97rem", lineHeight: "1.9", color: "#94a3b8", maxWidth: "600px" }}>
+                DevOps engineer with 3 years in real production environments. Built and owned infra for a{" "}
+                <span style={{ color: "#cbd5e1" }}>multiplayer gaming platform</span>, a{" "}
+                <span style={{ color: "#cbd5e1" }}>crypto wallet system</span>, and{" "}
+                <span style={{ color: "#cbd5e1" }}>enterprise RHEL servers</span>.
+              </p>
+              <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".97rem", lineHeight: "1.9", color: "#94a3b8", maxWidth: "600px", marginTop: ".9rem" }}>
+                Cut deployment time by <span style={{ color: "#63b3ed" }}>40%</span> at NIDEC.
+                Reduced incident resolution by <span style={{ color: "#34d399" }}>60%</span> at Block-Stars.
+                I automate the things I repeat, monitor everything in prod, and document so the next person doesn't have to guess.
+              </p>
+            </div>
+
+            <div className="f4" style={{ marginTop: "2rem" }}>
+              {[
+                { l: "↗ GitHub", h: "https://github.com/Shubham070msd" },
+                { l: "↗ LinkedIn", h: "https://linkedin.com/in/manjunath-huddar-devops" },
+                { l: "↗ Email", h: "mailto:manjunathhuddar1999@gmail.com" },
+              ].map(s => <a key={s.l} href={s.h} target={s.h.startsWith("mailto") ? undefined : "_blank"} rel="noopener noreferrer" className="soc">{s.l}</a>)}
+            </div>
+          </section>
+
+          <hr className="divider" />
+
+          {/* PROJECTS */}
+          <section id="projects">
+            <p className="sl">// projects</p>
+            <h2 className="stitle">What I've Built</h2>
+            {PROJECTS.map(p => (
+              <div key={p.name} className="pcard">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "5px", flexWrap: "wrap", gap: "6px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <span style={{ fontSize: "1.1rem" }}>{p.icon}</span>
+                    <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#f1f5f9", fontSize: "1rem", fontWeight: 600 }}>{p.name}</span>
+                  </div>
+                  <span style={{ fontFamily: "'Fira Code',monospace", color: "#2d4a6a", fontSize: ".63rem" }}>{p.period}</span>
+                </div>
+                <p style={{ fontFamily: "'Fira Code',monospace", color: "#3d5a7a", fontSize: ".65rem", letterSpacing: ".06em", marginBottom: "10px" }}>{p.subtitle}</p>
+                <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".9rem", lineHeight: "1.75", color: "#94a3b8" }}>{p.desc}</p>
+                <div style={{ marginTop: "4px" }}>{p.tags.map(t => <span key={t} className="ptag">{t}</span>)}</div>
               </div>
             ))}
-          </div>
+          </section>
 
-          <div className="f3">
-            <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:".97rem",lineHeight:"1.9",color:"#94a3b8",maxWidth:"600px" }}>
-              DevOps engineer with 2+ years in real production environments. Built and owned infra for a{" "}
-              <span style={{ color:"#cbd5e1" }}>multiplayer gaming platform</span>, a{" "}
-              <span style={{ color:"#cbd5e1" }}>crypto wallet system</span>, and{" "}
-              <span style={{ color:"#cbd5e1" }}>enterprise RHEL servers</span>.
-            </p>
-            <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:".97rem",lineHeight:"1.9",color:"#94a3b8",maxWidth:"600px",marginTop:".9rem" }}>
-              Cut deployment time by <span style={{ color:"#63b3ed" }}>40%</span> at NIDEC.
-              Reduced incident resolution by <span style={{ color:"#34d399" }}>60%</span> at Block-Stars.
-              I automate the things I repeat, monitor everything in prod, and document so the next person doesn't have to guess.
-            </p>
-          </div>
+          <hr className="divider" />
 
-          {/* OFF-SCREEN */}
-          <div className="f3" style={{ marginTop:"2rem" }}>
-            <p className="sl">// off-screen</p>
-            <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:".9rem",color:"#64748b",lineHeight:"1.7",marginBottom:"14px" }}>
-              When I'm not automating infra, I'm out on two wheels —
-              <span style={{ color:"#94a3b8" }}> riding, wrenching, and filming it all.</span>
+          {/* WORK */}
+          <section id="work">
+            <p className="sl">// experience</p>
+            <h2 className="stitle">Where I've Worked</h2>
+            {WORK.map(w => (
+              <div key={w.company} className="wcard">
+                <div className="waccent" style={{ background: `linear-gradient(180deg,${w.color},transparent)` }} />
+                <div style={{ paddingLeft: "18px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "8px", marginBottom: "4px" }}>
+                    <div>
+                      <h3 style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#f1f5f9", fontSize: "1.05rem", fontWeight: 600 }}>{w.company}</h3>
+                      <p style={{ fontFamily: "'Fira Code',monospace", color: w.color, fontSize: ".7rem", letterSpacing: ".06em", opacity: .85, marginTop: "3px" }}>{w.role}</p>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ fontFamily: "'Fira Code',monospace", color: "#2d4a6a", fontSize: ".68rem" }}>{w.period}</p>
+                      <p style={{ fontFamily: "'Fira Code',monospace", color: "#1e3a50", fontSize: ".63rem", marginTop: "3px" }}>{w.location}</p>
+                    </div>
+                  </div>
+                  <ul style={{ listStyle: "none", padding: 0, marginTop: "16px", display: "flex", flexDirection: "column", gap: "9px" }}>
+                    {w.bullets.map((b, i) => (
+                      <li key={i} style={{ display: "flex", gap: "11px", alignItems: "flex-start" }}>
+                        <span style={{ color: w.color, opacity: .4, marginTop: "6px", fontSize: ".45rem", flexShrink: 0 }}>◆</span>
+                        <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".9rem", lineHeight: "1.72", color: "#94a3b8" }}>{b}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ))}
+          </section>
+
+          <hr className="divider" />
+
+          {/* STACK */}
+          <section id="stack">
+            <p className="sl">// technologies</p>
+            <h2 className="stitle">My Stack</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(310px,1fr))", gap: "12px" }}>
+              {STACK.map(s => (
+                <div key={s.cat} className="scat">
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+                    <span style={{ fontSize: ".95rem" }}>{s.icon}</span>
+                    <span style={{ fontFamily: "'Fira Code',monospace", color: "#3d5a7a", fontSize: ".63rem", letterSpacing: ".16em" }}>{s.cat.toUpperCase()}</span>
+                  </div>
+                  <div>{s.items.map(i => <span key={i} className="si">{i}</span>)}</div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <hr className="divider" />
+
+          {/* ACHIEVEMENTS */}
+          <section id="achievements">
+            <p className="sl">// achievements</p>
+            <h2 className="stitle">Certifications & Badges</h2>
+
+            <div style={{
+              background: "linear-gradient(135deg, rgba(99,179,237,0.06) 0%, rgba(52,211,153,0.04) 100%)",
+              border: "1px solid rgba(99,179,237,0.2)",
+              borderRadius: "16px", padding: "24px",
+              marginBottom: "16px", position: "relative", overflow: "hidden",
+            }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,rgba(99,179,237,0.5),rgba(52,211,153,0.5),transparent)" }} />
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                    <span style={{ fontSize: "1.6rem" }}>🏆</span>
+                    <div>
+                      <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#f1f5f9", fontSize: "1.05rem", fontWeight: 700 }}>Google Cloud Arcade</p>
+                      <p style={{ fontFamily: "'Fira Code',monospace", color: "#34d399", fontSize: "0.7rem", letterSpacing: "0.08em", marginTop: "2px" }}>CHAMPION TIER · GOLD LEAGUE</p>
+                    </div>
+                  </div>
+                  <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: "0.88rem", color: "#94a3b8", lineHeight: "1.7", maxWidth: "440px" }}>
+                    Completed the Google Cloud Arcade program and reached Champion tier — the highest level. Earned through consistent hands-on labs, challenges, and quizzes across Google Cloud services.
+                  </p>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+                  <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: "2.2rem", fontWeight: 700, background: "linear-gradient(135deg,#fbbf24,#f59e0b)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1 }}>69K+</span>
+                  <span style={{ fontFamily: "'Fira Code',monospace", fontSize: "0.58rem", color: "#475569", letterSpacing: "0.1em" }}>POINTS</span>
+                  <div style={{ marginTop: "6px", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: "20px", padding: "3px 12px" }}>
+                    <span style={{ fontFamily: "'Fira Code',monospace", fontSize: "0.62rem", color: "#fbbf24", letterSpacing: "0.08em" }}>70+ BADGES</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: "18px", paddingTop: "16px", borderTop: "1px solid rgba(99,179,237,0.08)" }}>
+                <p style={{ fontFamily: "'Fira Code',monospace", fontSize: "0.6rem", color: "#3d5a7a", letterSpacing: "0.14em", marginBottom: "10px" }}>HIGHLIGHTS</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "7px" }}>
+                  {[
+                    "Implement DevOps Workflows in GCP",
+                    "CI/CD Pipelines on Google Cloud",
+                    "Manage Kubernetes in GCP",
+                    "Terraform on Google Cloud",
+                    "Deploy Kubernetes Applications",
+                    "Cloud Security Fundamentals",
+                    "Prompt Design in Vertex AI",
+                    "Introduction to Generative AI",
+                  ].map(b => (
+                    <span key={b} style={{
+                      display: "inline-block",
+                      background: "rgba(99,179,237,0.06)",
+                      border: "1px solid rgba(99,179,237,0.14)",
+                      color: "#7dd3fc",
+                      fontFamily: "'Fira Code',monospace",
+                      fontSize: "0.62rem", letterSpacing: "0.03em",
+                      padding: "4px 10px", borderRadius: "6px",
+                    }}>{b}</span>
+                  ))}
+                </div>
+              </div>
+
+              <a
+                href="https://www.skills.google/public_profiles/36f94e84-4845-4a29-a5ec-d10c6e628f0e"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: "6px",
+                  marginTop: "16px",
+                  fontFamily: "'Fira Code',monospace", fontSize: "0.7rem",
+                  color: "#63b3ed", textDecoration: "none", letterSpacing: "0.06em",
+                  transition: "color 0.2s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = "#93c5fd"}
+                onMouseLeave={e => e.currentTarget.style.color = "#63b3ed"}
+              >
+                ↗ View all badges on Google Skills Boost
+              </a>
+            </div>
+          </section>
+
+          <hr className="divider" />
+
+          {/* WAR STORIES */}
+          <section id="more">
+            <p className="sl">// incident log</p>
+            <h2 className="stitle">What Broke & How I Fixed It</h2>
+            <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".92rem", color: "#64748b", lineHeight: "1.8", marginBottom: "2rem" }}>
+              Real incidents from prod. The ones that made me a better engineer.
             </p>
-            <div style={{ display:"flex",flexDirection:"column",gap:"10px" }}>
-              {OFFSCREEN.map((item,i)=>(
-                <div key={i} className="off-card">
-                  <span style={{ fontSize:"1.3rem",flexShrink:0,marginTop:"1px" }}>{item.icon}</span>
-                  <div>
-                    <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#e2e8f0",fontSize:".88rem",fontWeight:600,marginBottom:"3px" }}>{item.title}</p>
-                    <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#64748b",fontSize:".83rem",lineHeight:"1.65" }}>{item.desc}</p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "3rem" }}>
+              {[
+                {
+                  sev: "P1", sevColor: "#f87171", sevBg: "rgba(248,113,113,0.08)", sevBorder: "rgba(248,113,113,0.2)",
+                  time: "3AM · 2024", platform: "Aslan · AWS",
+                  title: "MongoDB CPU spiked to 100% — gaming platform down",
+                  what: "Players started getting dropped mid-game. MongoDB CPU hit 100%, queries timing out across all game services.",
+                  fix: "Identified a missing index on a high-frequency query via slow query logs. Added compound index, CPU dropped to 18% in under 3 minutes. Added query performance alerts to Zabbix so it never snuck up on us again.",
+                },
+                {
+                  sev: "P2", sevColor: "#fb923c", sevBg: "rgba(251,146,60,0.08)", sevBorder: "rgba(251,146,60,0.2)",
+                  time: "Working hours · 2024", platform: "AIW/TRIA · Cloudflare",
+                  title: "DDoS attack on crypto wallet API endpoints",
+                  what: "Sudden spike in traffic — API response times went from 80ms to 8s. Wallet transactions failing for real users.",
+                  fix: "Cloudflare WAF rate limiting rules deployed within minutes. Identified attack patterns and blocked malicious IPs. Implemented request fingerprinting. Zero data loss, service restored in under 15 minutes.",
+                },
+                {
+                  sev: "P2", sevColor: "#fb923c", sevBg: "rgba(251,146,60,0.08)", sevBorder: "rgba(251,146,60,0.2)",
+                  time: "Deploy day · 2023", platform: "Kingpot · Jenkins",
+                  title: "Bad deploy took down casino game servers",
+                  what: "A Jenkins pipeline pushed a config change to prod without proper validation. Game servers started crashing on startup.",
+                  fix: "Rolled back via pipeline within 4 minutes. Added a mandatory staging validation stage to the pipeline — every config change now runs smoke tests before it touches prod. Deploy failures dropped 50% after this.",
+                },
+                {
+                  sev: "P3", sevColor: "#34d399", sevBg: "rgba(52,211,153,0.08)", sevBorder: "rgba(52,211,153,0.2)",
+                  time: "Night shift · 2024", platform: "NIDEC · RHEL",
+                  title: "PQM database backup script silently failing for weeks",
+                  what: "Routine audit revealed backups hadn't run in 18 days. The script was exiting with code 0 even on failure — no alerts triggered.",
+                  fix: "Rewrote the backup script with proper exit code handling, added checksum validation, and wired failure alerts to email. Also added a daily backup verification cron job. Now it proves it worked, not just that it ran.",
+                },
+              ].map((inc, i) => (
+                <div key={i} style={{
+                  background: "#1a2436", border: "1px solid rgba(255,255,255,0.07)",
+                  borderRadius: "16px", padding: "20px 22px",
+                  borderLeft: `3px solid ${inc.sevColor}`,
+                  transition: "border-color 0.2s, box-shadow 0.2s",
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 8px 30px rgba(0,0,0,0.2)`; e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "8px", marginBottom: "10px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{
+                        fontFamily: "'Fira Code',monospace", fontSize: "0.58rem",
+                        letterSpacing: "0.1em", padding: "2px 8px", borderRadius: "5px",
+                        background: inc.sevBg, border: `1px solid ${inc.sevBorder}`,
+                        color: inc.sevColor, fontWeight: 500,
+                      }}>{inc.sev}</span>
+                      <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#f1f5f9", fontSize: "0.95rem", fontWeight: 600 }}>{inc.title}</span>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ fontFamily: "'Fira Code',monospace", fontSize: "0.62rem", color: "#2d4a6a" }}>{inc.time}</p>
+                      <p style={{ fontFamily: "'Fira Code',monospace", fontSize: "0.6rem", color: "#1e3a50", marginTop: "2px" }}>{inc.platform}</p>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                      <span style={{ fontFamily: "'Fira Code',monospace", fontSize: "0.6rem", color: "#f87171", letterSpacing: "0.08em", flexShrink: 0, marginTop: "3px", opacity: 0.7 }}>WHAT</span>
+                      <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: "0.87rem", color: "#64748b", lineHeight: "1.7" }}>{inc.what}</p>
+                    </div>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                      <span style={{ fontFamily: "'Fira Code',monospace", fontSize: "0.6rem", color: "#34d399", letterSpacing: "0.08em", flexShrink: 0, marginTop: "3px", opacity: 0.7 }}>FIX</span>
+                      <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: "0.87rem", color: "#94a3b8", lineHeight: "1.7" }}>{inc.fix}</p>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
 
-          <div className="f4" style={{ marginTop:"2rem" }}>
-            {[
-              {l:"↗ GitHub",h:"#"},
-              {l:"↗ LinkedIn",h:"https://linkedin.com/in/manjunath-huddar-devops"},
-              {l:"↗ Email",h:"mailto:manjunathhuddar1999@gmail.com"},
-            ].map(s=><a key={s.l} href={s.h} className="soc">{s.l}</a>)}
-          </div>
-        </section>
-
-        <hr className="divider"/>
-
-        {/* PROJECTS */}
-        <section id="projects">
-          <p className="sl">// projects</p>
-          <h2 className="stitle">What I've Built</h2>
-          {PROJECTS.map(p=>(
-            <div key={p.name} className="pcard">
-              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"5px",flexWrap:"wrap",gap:"6px" }}>
-                <div style={{ display:"flex",alignItems:"center",gap:"10px" }}>
-                  <span style={{ fontSize:"1.1rem" }}>{p.icon}</span>
-                  <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#f1f5f9",fontSize:"1rem",fontWeight:600 }}>{p.name}</span>
-                </div>
-                <span style={{ fontFamily:"'Fira Code',monospace",color:"#2d4a6a",fontSize:".63rem" }}>{p.period}</span>
-              </div>
-              <p style={{ fontFamily:"'Fira Code',monospace",color:"#3d5a7a",fontSize:".65rem",letterSpacing:".06em",marginBottom:"10px" }}>{p.subtitle}</p>
-              <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:".9rem",lineHeight:"1.75",color:"#94a3b8" }}>{p.desc}</p>
-              <div style={{ marginTop:"4px" }}>{p.tags.map(t=><span key={t} className="ptag">{t}</span>)}</div>
-            </div>
-          ))}
-        </section>
-
-        <hr className="divider"/>
-
-        {/* WORK */}
-        <section id="work">
-          <p className="sl">// experience</p>
-          <h2 className="stitle">Where I've Worked</h2>
-          {WORK.map(w=>(
-            <div key={w.company} className="wcard">
-              <div className="waccent" style={{ background:`linear-gradient(180deg,${w.color},transparent)` }}/>
-              <div style={{ paddingLeft:"18px" }}>
-                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"8px",marginBottom:"4px" }}>
-                  <div>
-                    <h3 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#f1f5f9",fontSize:"1.05rem",fontWeight:600 }}>{w.company}</h3>
-                    <p style={{ fontFamily:"'Fira Code',monospace",color:w.color,fontSize:".7rem",letterSpacing:".06em",opacity:.85,marginTop:"3px" }}>{w.role}</p>
-                  </div>
-                  <div style={{ textAlign:"right" }}>
-                    <p style={{ fontFamily:"'Fira Code',monospace",color:"#2d4a6a",fontSize:".68rem" }}>{w.period}</p>
-                    <p style={{ fontFamily:"'Fira Code',monospace",color:"#1e3a50",fontSize:".63rem",marginTop:"3px" }}>{w.location}</p>
-                  </div>
-                </div>
-                <ul style={{ listStyle:"none",padding:0,marginTop:"16px",display:"flex",flexDirection:"column",gap:"9px" }}>
-                  {w.bullets.map((b,i)=>(
-                    <li key={i} style={{ display:"flex",gap:"11px",alignItems:"flex-start" }}>
-                      <span style={{ color:w.color,opacity:.4,marginTop:"6px",fontSize:".45rem",flexShrink:0 }}>◆</span>
-                      <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:".9rem",lineHeight:"1.72",color:"#94a3b8" }}>{b}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          ))}
-        </section>
-
-        <hr className="divider"/>
-
-        {/* STACK */}
-        <section id="stack">
-          <p className="sl">// technologies</p>
-          <h2 className="stitle">My Stack</h2>
-          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(310px,1fr))",gap:"12px" }}>
-            {STACK.map(s=>(
-              <div key={s.cat} className="scat">
-                <div style={{ display:"flex",alignItems:"center",gap:"8px",marginBottom:"12px" }}>
-                  <span style={{ fontSize:".95rem" }}>{s.icon}</span>
-                  <span style={{ fontFamily:"'Fira Code',monospace",color:"#3d5a7a",fontSize:".63rem",letterSpacing:".16em" }}>{s.cat.toUpperCase()}</span>
-                </div>
-                <div>{s.items.map(i=><span key={i} className="si">{i}</span>)}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <hr className="divider"/>
-
-        {/* ACHIEVEMENTS */}
-        <section id="achievements">
-          <p className="sl">// achievements</p>
-          <h2 className="stitle">Certifications & Badges</h2>
-
-          {/* Main achievement card */}
-          <div style={{
-            background: "linear-gradient(135deg, rgba(99,179,237,0.06) 0%, rgba(52,211,153,0.04) 100%)",
-            border: "1px solid rgba(99,179,237,0.2)",
-            borderRadius: "16px", padding: "24px",
-            marginBottom: "16px", position: "relative", overflow: "hidden",
-          }}>
-            {/* top shimmer line */}
-            <div style={{ position:"absolute", top:0, left:0, right:0, height:"1px", background:"linear-gradient(90deg,transparent,rgba(99,179,237,0.5),rgba(52,211,153,0.5),transparent)" }}/>
-
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:"16px" }}>
-              <div>
-                <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"8px" }}>
-                  <span style={{ fontSize:"1.6rem" }}>🏆</span>
-                  <div>
-                    <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#f1f5f9", fontSize:"1.05rem", fontWeight:700 }}>Google Cloud Arcade</p>
-                    <p style={{ fontFamily:"'Fira Code',monospace", color:"#34d399", fontSize:"0.7rem", letterSpacing:"0.08em", marginTop:"2px" }}>CHAMPION TIER · GOLD LEAGUE</p>
-                  </div>
-                </div>
-                <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.88rem", color:"#94a3b8", lineHeight:"1.7", maxWidth:"440px" }}>
-                  Completed the Google Cloud Arcade program and reached Champion tier — the highest level. Earned through consistent hands-on labs, challenges, and quizzes across Google Cloud services.
-                </p>
-              </div>
-              <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"4px", flexShrink:0 }}>
-                <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"2.2rem", fontWeight:700, background:"linear-gradient(135deg,#fbbf24,#f59e0b)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text", lineHeight:1 }}>69K+</span>
-                <span style={{ fontFamily:"'Fira Code',monospace", fontSize:"0.58rem", color:"#475569", letterSpacing:"0.1em" }}>POINTS</span>
-                <div style={{ marginTop:"6px", background:"rgba(251,191,36,0.1)", border:"1px solid rgba(251,191,36,0.25)", borderRadius:"20px", padding:"3px 12px" }}>
-                  <span style={{ fontFamily:"'Fira Code',monospace", fontSize:"0.62rem", color:"#fbbf24", letterSpacing:"0.08em" }}>70+ BADGES</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Key DevOps-relevant badges */}
-            <div style={{ marginTop:"18px", paddingTop:"16px", borderTop:"1px solid rgba(99,179,237,0.08)" }}>
-              <p style={{ fontFamily:"'Fira Code',monospace", fontSize:"0.6rem", color:"#3d5a7a", letterSpacing:"0.14em", marginBottom:"10px" }}>HIGHLIGHTS</p>
-              <div style={{ display:"flex", flexWrap:"wrap", gap:"7px" }}>
+            {/* CURRENTLY EXPLORING */}
+            <div style={{
+              background: "rgba(99,179,237,0.04)",
+              border: "1px solid rgba(99,179,237,0.12)",
+              borderRadius: "16px", padding: "20px 22px", marginBottom: "2rem",
+            }}>
+              <p style={{ fontFamily: "'Fira Code',monospace", fontSize: ".62rem", color: "#63b3ed", letterSpacing: ".14em", opacity: .65, marginBottom: "14px" }}>CURRENTLY EXPLORING</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "11px" }}>
                 {[
-                  "Implement DevOps Workflows in GCP",
-                  "CI/CD Pipelines on Google Cloud",
-                  "Manage Kubernetes in GCP",
-                  "Terraform on Google Cloud",
-                  "Deploy Kubernetes Applications",
-                  "Cloud Security Fundamentals",
-                  "Prompt Design in Vertex AI",
-                  "Introduction to Generative AI",
-                ].map(b => (
-                  <span key={b} style={{
-                    display:"inline-block",
-                    background:"rgba(99,179,237,0.06)",
-                    border:"1px solid rgba(99,179,237,0.14)",
-                    color:"#7dd3fc",
-                    fontFamily:"'Fira Code',monospace",
-                    fontSize:"0.62rem", letterSpacing:"0.03em",
-                    padding:"4px 10px", borderRadius:"6px",
-                  }}>{b}</span>
+                  { icon: "🤖", text: "AI agents and agentic workflows — tools that can reason, plan, and take actions on their own" },
+                  { icon: "⚙️", text: "How LLMs can help with incident analysis and automated runbook execution" },
+                  { icon: "🔬", text: "Self-healing infrastructure — systems that detect and fix issues themselves" },
+                ].map((item, i) => (
+                  <div key={i} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                    <span style={{ fontSize: "1rem", flexShrink: 0 }}>{item.icon}</span>
+                    <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".9rem", color: "#64748b", lineHeight: "1.65" }}>{item.text}</span>
+                  </div>
                 ))}
               </div>
             </div>
 
-            {/* Link */}
-            <a
-              href="https://www.skills.google/public_profiles/36f94e84-4845-4a29-a5ec-d10c6e628f0e"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display:"inline-flex", alignItems:"center", gap:"6px",
-                marginTop:"16px",
-                fontFamily:"'Fira Code',monospace", fontSize:"0.7rem",
-                color:"#63b3ed", textDecoration:"none", letterSpacing:"0.06em",
-                transition:"color 0.2s",
-              }}
-              onMouseEnter={e=>e.currentTarget.style.color="#93c5fd"}
-              onMouseLeave={e=>e.currentTarget.style.color="#63b3ed"}
-            >
-              ↗ View all badges on Google Skills Boost
+            {/* OFF-SCREEN — moved here from hero */}
+            <div style={{ marginBottom: "2rem" }}>
+              <p style={{ fontFamily: "'Fira Code',monospace", color: "#2d4a6a", fontSize: ".62rem", letterSpacing: ".14em", marginBottom: "1rem" }}>OFF-SCREEN</p>
+              <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".9rem", color: "#64748b", lineHeight: "1.7", marginBottom: "14px" }}>
+                When I'm not automating infra, I'm out on two wheels —
+                <span style={{ color: "#94a3b8" }}> riding, wrenching, and filming it all.</span>
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {OFFSCREEN.map((item, i) => (
+                  <div key={i} className="off-card">
+                    <span style={{ fontSize: "1.3rem", flexShrink: 0, marginTop: "1px" }}>{item.icon}</span>
+                    <div>
+                      <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#e2e8f0", fontSize: ".88rem", fontWeight: 600, marginBottom: "3px" }}>{item.title}</p>
+                      <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#64748b", fontSize: ".83rem", lineHeight: "1.65" }}>{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <p style={{ fontFamily: "'Fira Code',monospace", color: "#2d4a6a", fontSize: ".62rem", letterSpacing: ".14em", marginBottom: "1.2rem" }}>MORE ABOUT ME</p>
+            {MISC.map(m => <AccordionItem key={m.q} q={m.q} a={m.a} />)}
+          </section>
+
+          <hr className="divider" />
+
+          {/* CTA — replaced newsletter */}
+          <section className="cta-section">
+            <p className="sl" style={{ justifyContent: "center" }}>// let's connect</p>
+            <h3 style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#f1f5f9", fontSize: "1.55rem", fontWeight: 700, marginTop: "10px", marginBottom: "10px", letterSpacing: "-.02em" }}>
+              DevOps engineer exploring how AI can make infra smarter.
+            </h3>
+            <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#64748b", fontSize: ".92rem", lineHeight: "1.7", marginBottom: "2rem", maxWidth: "500px", margin: "0 auto 2rem" }}>
+              I'm open to DevOps, AI roles where I can own systems end-to-end and bring AI into the workflow.
+            </p>
+            <a href="mailto:manjunathhuddar1999@gmail.com" className="cta-btn">
+              Let's Talk →
             </a>
-          </div>
-        </section>
-
-        <hr className="divider"/>
-
-        {/* MISC */}
-        <section id="misc">
-          <p className="sl">// moments</p>
-          <h2 className="stitle">Journey So Far</h2>
-          <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:".92rem",color:"#64748b",lineHeight:"1.8",marginBottom:"2rem" }}>
-            2 years of production infra. A few chapters worth remembering.
-          </p>
-
-          <div className="track-outer" style={{ marginBottom:"3rem" }}>
-            <div className="track">
-              {[...MOMENTS,...MOMENTS].map((m,i)=>(
-                <div key={i} className="mcard">
-                  <div style={{ fontSize:"1.7rem",marginBottom:"10px" }}>{m.icon}</div>
-                  <p style={{ fontFamily:"'Fira Code',monospace",fontSize:".64rem",color:"#475569",lineHeight:"1.5" }}>{m.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* CURRENTLY EXPLORING */}
-          <div style={{
-            background:"rgba(99,179,237,0.04)",
-            border:"1px solid rgba(99,179,237,0.12)",
-            borderRadius:"16px",padding:"20px 22px",marginBottom:"2rem",
-          }}>
-            <p style={{ fontFamily:"'Fira Code',monospace",fontSize:".62rem",color:"#63b3ed",letterSpacing:".14em",opacity:.65,marginBottom:"14px" }}>CURRENTLY EXPLORING</p>
-            <div style={{ display:"flex",flexDirection:"column",gap:"11px" }}>
+            <div style={{ marginTop: "1.2rem", display: "flex", justifyContent: "center", gap: "20px" }}>
               {[
-                { icon:"🤖", text:"AI agents and agentic workflows — tools that can reason, plan, and take actions on their own" },
-                { icon:"⚙️", text:"How LLMs can help with incident analysis and automated runbook execution" },
-                { icon:"🔬", text:"Self-healing infrastructure — systems that detect and fix issues themselves" },
-              ].map((item,i)=>(
-                <div key={i} style={{ display:"flex",gap:"12px",alignItems:"flex-start" }}>
-                  <span style={{ fontSize:"1rem",flexShrink:0 }}>{item.icon}</span>
-                  <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:".9rem",color:"#64748b",lineHeight:"1.65" }}>{item.text}</span>
+                { l: "GitHub", h: "https://github.com/Shubham070msd" },
+                { l: "LinkedIn", h: "https://linkedin.com/in/manjunath-huddar-devops" },
+              ].map(s => (
+                <a key={s.l} href={s.h} target="_blank" rel="noopener noreferrer" className="soc" style={{ margin: 0 }}>{`↗ ${s.l}`}</a>
+              ))}
+            </div>
+          </section>
+
+          {/* FOOTER */}
+          <div style={{
+            borderTop: "1px solid rgba(255,255,255,0.05)",
+            padding: "1.5rem 0",
+            display: "flex", justifyContent: "space-between",
+            alignItems: "center", flexWrap: "wrap", gap: "8px",
+          }}>
+            <span style={{ fontFamily: "'Fira Code',monospace", color: "#1e3a50", fontSize: ".7rem" }}>Manjunath Huddar · DevOps Engineer</span>
+            <span style={{ fontFamily: "'Fira Code',monospace", color: "#1a2e42", fontSize: ".68rem" }}>{"// automate the boring parts"}</span>
+          </div>
+
+        </div>{/* end main content */}
+
+        {/* STICKY SIDEBAR */}
+        <aside className="sidebar">
+
+          {/* Neofetch-style System Info */}
+          <div className="sb-card" style={{ fontFamily: "'Fira Code',monospace", fontSize: ".62rem", lineHeight: "1.9" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
+              <span style={{ color: "#63b3ed", fontSize: ".7rem" }}>mj@devops</span>
+              <span style={{ color: "#2d4a6a" }}>~</span>
+              <span style={{ color: "#34d399", fontSize: ".6rem" }}>$ neofetch</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
+              {[
+                { key: "role", val: "DevOps Engineer" },
+                { key: "loc", val: "Bengaluru, IN" },
+                { key: "exp", val: "3 yrs prod" },
+                { key: "at", val: "NIDEC Pvt Ltd" },
+                { key: "focus", val: "DevOps + AI" },
+                { key: "status", val: "open to work" },
+              ].map(r => (
+                <div key={r.key} style={{ display: "flex", gap: "4px" }}>
+                  <span style={{ color: "#63b3ed", minWidth: "48px" }}>{r.key}:</span>
+                  <span style={{ color: "#94a3b8" }}>{r.val}</span>
                 </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: "4px", marginTop: "10px" }}>
+              {["#63b3ed", "#34d399", "#f472b6", "#fbbf24", "#fb923c", "#a78bfa"].map(c => (
+                <span key={c} style={{ width: "10px", height: "10px", borderRadius: "2px", background: c }} />
               ))}
             </div>
           </div>
 
-          <p style={{ fontFamily:"'Fira Code',monospace",color:"#2d4a6a",fontSize:".62rem",letterSpacing:".14em",marginBottom:"1.2rem" }}>MORE ABOUT ME</p>
-          {MISC.map(m=><AccordionItem key={m.q} q={m.q} a={m.a}/>)}
-        </section>
-
-        <hr className="divider"/>
-
-        {/* NEWSLETTER */}
-        <section style={{ paddingBottom:"5.5rem",textAlign:"center" }}>
-          <p className="sl" style={{ justifyContent:"center" }}>// newsletter</p>
-          <h3 style={{ fontFamily:"'Plus Jakarta Sans',sans-serif",color:"#f1f5f9",fontSize:"1.55rem",fontWeight:700,marginTop:"10px",marginBottom:"8px",letterSpacing:"-.02em" }}>
-            DevOps from the Trenches
-          </h3>
-          <p style={{ fontFamily:"'Fira Code',monospace",color:"#3d5a7a",fontSize:".78rem",marginBottom:"2rem" }}>
-            Real incidents. Real fixes. No fluff.
-          </p>
-          <div style={{ display:"flex",justifyContent:"center",flexWrap:"wrap",gap:"8px" }}>
-            <input className="nl-input" type="email" placeholder="your@email.com"/>
-            <button className="nl-btn">Subscribe</button>
+          {/* Resume Download */}
+          <div className="sb-card" style={{ textAlign: "center" }}>
+            <p style={{ fontFamily: "'Fira Code',monospace", fontSize: ".55rem", color: "#2d4a6a", letterSpacing: ".16em", marginBottom: "10px" }}>RESUME</p>
+            <a href="/resume.pdf" download style={{
+              display: "inline-flex", alignItems: "center", gap: "6px",
+              background: "rgba(99,179,237,0.08)",
+              border: "1px solid rgba(99,179,237,0.2)",
+              color: "#63b3ed", padding: "8px 16px",
+              fontFamily: "'Fira Code',monospace", fontSize: ".68rem",
+              borderRadius: "8px", textDecoration: "none", letterSpacing: ".04em",
+              transition: "background .2s, border-color .2s, transform .2s",
+              width: "100%", justifyContent: "center",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(99,179,237,0.14)"; e.currentTarget.style.borderColor = "rgba(99,179,237,0.4)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(99,179,237,0.08)"; e.currentTarget.style.borderColor = "rgba(99,179,237,0.2)"; e.currentTarget.style.transform = "translateY(0)"; }}
+            >↓ Download PDF</a>
           </div>
-        </section>
 
-        {/* FOOTER */}
-        <div style={{
-          borderTop:"1px solid rgba(255,255,255,0.05)",
-          padding:"1.5rem 0",
-          display:"flex",justifyContent:"space-between",
-          alignItems:"center",flexWrap:"wrap",gap:"8px",
-        }}>
-          <span style={{ fontFamily:"'Fira Code',monospace",color:"#1e3a50",fontSize:".7rem" }}>Manjunath Huddar · DevOps Engineer</span>
-          <span style={{ fontFamily:"'Fira Code',monospace",color:"#1a2e42",fontSize:".68rem" }}>{"// automate the boring parts"}</span>
-        </div>
+          {/* Social */}
+          <div className="sb-card">
+            <p style={{ fontFamily: "'Fira Code',monospace", fontSize: ".55rem", color: "#2d4a6a", letterSpacing: ".16em", marginBottom: "10px" }}>CONNECT</p>
+            {[
+              { label: "GitHub", href: "https://github.com/Shubham070msd", icon: "⌥" },
+              { label: "LinkedIn", href: "https://linkedin.com/in/manjunath-huddar-devops", icon: "in" },
+              { label: "Email", href: "mailto:manjunathhuddar1999@gmail.com", icon: "@" },
+            ].map(s => (
+              <a key={s.label} href={s.href} target={s.href.startsWith("mailto") ? undefined : "_blank"} rel="noopener noreferrer" className="sb-link">
+                <span style={{ fontFamily: "'Fira Code',monospace", fontSize: ".6rem", color: "#2d4a6a", width: "16px", textAlign: "center" }}>{s.icon}</span>
+                {s.label}
+              </a>
+            ))}
+          </div>
 
-      </div>
+        </aside>
+
+      </div>{/* end two-column */}
     </div>
   );
 }
