@@ -1,913 +1,561 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
+import IncidentLab from "./components/IncidentLab";
+import "./App.css";
 
-const PROJECTS = [
+const EMAIL = "mailto:manjunathhuddar1999@gmail.com";
+const GITHUB = "https://github.com/Shubham070msd";
+const SOURCE = `${GITHUB}/portfolio/tree/codex/portfolio-refresh`;
+const navigation = [
+  ["work", "Selected work"],
+  ["lab", "AI lab"],
+  ["experience", "Experience"],
+  ["contact", "Contact"],
+];
+const projects = [
   {
-    name: "GenAI Dockerfile Generator",
-    subtitle: "Internal Tool · Python + LLaMA3",
-    desc: "A CLI that generates production-ready Dockerfiles using Python, Ollama, and LLaMA3. Cut manual config errors by 60%. An AI agent that understands your stack and writes the boilerplate so you don't have to.",
-    tags: ["Python", "LLaMA3", "Ollama", "GenAI", "Docker"],
-    period: "2024",
-    icon: "🤖",
+    title: "Ephemeral environments",
+    category: "DEVELOPER EXPERIENCE",
+    type: "Internal tooling",
+    description:
+      "A fresh sandbox for every feature branch. Less setup for QA, more time testing what matters.",
+    tags: ["Terraform", "ECS Fargate", "Shell"],
+    diagram: ["Pull request", "Terraform", "Isolated environment"],
+    context:
+      "QA teams needed temporary environments without repeatedly setting up infrastructure by hand.",
+    approach:
+      "A lightweight CLI provisions feature-branch environments on AWS ECS Fargate using Terraform and Shell.",
+    note: "Internal project. Source and deployment details are not published here.",
   },
   {
-    name: "Aslan",
-    subtitle: "Multiplayer Gaming Platform · AWS",
-    desc: "Full infra ownership on AWS. Ansible playbooks for zero-touch environment setup — Node.js, Docker, GitLab deploys. Real-time metrics via Prometheus, Grafana, and Zabbix. On-call runbooks that actually got used at 3am.",
-    tags: ["AWS", "Ansible", "MongoDB", "Zabbix", "Grafana", "Docker"],
-    period: "Oct 2024 – 2025",
-    icon: "🎮",
+    title: "Infrastructure behind the game",
+    category: "PRODUCTION OPERATIONS",
+    type: "Aslan · AWS",
+    description:
+      "Provisioning, deployments, and observability for a multiplayer gaming platform.",
+    tags: ["AWS", "Ansible", "Grafana"],
+    diagram: ["Ansible", "Game services", "Metrics & alerts"],
+    context:
+      "A multiplayer platform needed consistent environments and visibility into production issues.",
+    approach:
+      "Managed AWS infrastructure, automated Node.js and Docker setup with Ansible, and connected Prometheus, Grafana, and Zabbix for monitoring.",
+    note: "Professional work at Block-Stars. This summary describes my infrastructure contribution.",
   },
   {
-    name: "Kingpot",
-    subtitle: "Casino Game Platform · AWS",
-    desc: "Optimized Jenkins pipelines and cut deployment failures by 50%. Integrated ELK Stack for centralized logging across all game services. Diagnosed and fixed MongoDB CPU spikes in prod — configured replication and automated backups.",
-    tags: ["Jenkins", "ELK Stack", "MongoDB", "AWS", "Shell"],
-    period: "Feb 2023 – Jun 2025",
-    icon: "🃏",
-  },
-  {
-    name: "AIW / TRIA",
-    subtitle: "Crypto Wallet Platform · Azure + AWS",
-    desc: "Node.js services on PM2 with clustering for high availability. Cloudflare WAF and DNS to block DDoS attacks. MongoDB replication with scheduled backups to protect financial data.",
-    tags: ["Azure DevOps", "Cloudflare WAF", "PM2", "MongoDB", "Node.js"],
-    period: "Apr 2024 – 2025",
-    icon: "🔐",
-  },
-  {
-    name: "Ephemeral Env CLI",
-    subtitle: "Internal Tool · Terraform + ECS Fargate",
-    desc: "A lightweight CLI that provisions temporary feature-branch environments on AWS ECS Fargate via Terraform and Shell. QA teams get isolated sandboxes per pull request with zero manual setup.",
-    tags: ["Terraform", "ECS Fargate", "Shell", "AWS", "IaC"],
-    period: "2024",
-    icon: "⚡",
+    title: "Dockerfiles, with a head start",
+    category: "AI-ASSISTED TOOLING",
+    type: "Internal experiment",
+    description:
+      "Exploring how a local language model can turn stack context into a first-draft Dockerfile.",
+    tags: ["Python", "Ollama", "LLaMA3"],
+    diagram: ["Stack context", "Local LLM", "Dockerfile draft"],
+    context:
+      "Writing similar container configurations repeatedly was an opportunity to experiment with local AI.",
+    approach:
+      "Built a Python CLI around Ollama and LLaMA3 to generate Dockerfile drafts from application context.",
+    note: "Generated files still need dependency checks, build validation, and human review. Source is not published here.",
   },
 ];
-
-const WORK = [
-  {
-    company: "NIDEC Pvt Ltd",
-    role: "Software Engineer — DevOps",
-    location: "Bengaluru, India",
-    period: "Aug 2025 – Present",
-    color: "#34d399",
-    bullets: [
-      "Configured and maintained PQM application servers on RHEL — stable deployments and consistent uptime.",
-      "Set up Jenkins pipelines that cut deployment time by 40%, replacing manual release steps.",
-      "Automated PQM database backup and restore using Shell scripting — no more manual overnight work.",
-      "Wrote detailed runbooks for setup, upgrades, and troubleshooting that made onboarding a lot faster.",
-    ],
-  },
-  {
-    company: "Block-Stars Pvt Ltd",
-    role: "DevOps Engineer",
-    location: "Seoul, South Korea · Remote",
-    period: "2023 – 2025",
-    color: "#f472b6",
-    bullets: [
-      "Built and maintained CI/CD pipelines on Jenkins and GitLab CI across gaming and crypto platforms — 30% faster deployments.",
-      "Set up AWS multi-account structure for dev, staging, and prod — better security isolation and cleaner resource management.",
-      "Built Kibana dashboards for Aslan and AIW/TRIA that cut incident resolution time by 60% and caught 80% of recurring issues early.",
-      "Monitored MongoDB with Zabbix and Datadog — replication, automated backups, 90% availability maintained in prod.",
-      "Wired Zabbix alerts to Telegram notifications — average alert response time improved by 50%.",
-      "Wrote Shell and Python scripts that saved the team 4 hours every week on routine ops tasks.",
-    ],
-  },
-];
-
-const STACK = [
-  { cat: "AI / GenAI", items: ["Ollama", "LLaMA3", "OpenAI API", "LLM", "Prompt Engineering"], icon: "🤖" },
-  { cat: "Cloud", items: ["AWS", "Azure", "GCP"], icon: "☁️" },
-  { cat: "Containers", items: ["Docker", "Kubernetes", "Helm", "PM2"], icon: "📦" },
-  { cat: "CI / CD", items: ["Jenkins", "GitLab CI", "Azure DevOps"], icon: "🔄" },
-  { cat: "IaC & Config", items: ["Terraform", "Ansible"], icon: "🏗️" },
-  { cat: "Observability", items: ["Prometheus", "Grafana", "ELK Stack", "Datadog", "Zabbix"], icon: "📊" },
-  { cat: "Scripting", items: ["Shell", "Python"], icon: "💻" },
-  { cat: "Databases", items: ["MongoDB", "PostgreSQL", "MySQL"], icon: "🗄️" },
-  { cat: "Security", items: ["Cloudflare WAF", "IAM", "Nginx", "Apache"], icon: "🛡️" },
-];
-
-const MISC = [
-  {
-    q: "How I Got Started",
-    a: "Started managing Linux servers and got hooked on automating everything I touched. First real DevOps moment: writing a Shell script to auto-backup MongoDB at midnight so I didn't have to babysit it. That 'set it and forget it' feeling — never looked back.",
-  },
-  {
-    q: "My Work Philosophy",
-    a: "If something is done more than twice, automate it. If it's not monitored, it doesn't exist. A good runbook written at 2pm saves everyone at 2am. I try to build systems that are boring by design — boring infra means engineers sleep well.",
-  },
-  {
-    q: "What I'm Learning Now",
-    a: "Trying to bring AI into the way I work as a DevOps engineer. Right now I'm exploring AI agents and agentic workflows — tools that can reason, plan, and take actions on their own. The GenAI Dockerfile generator was my first experiment. Now looking at how LLMs can help with incident analysis, automated runbook execution, and self-healing infrastructure.",
-  },
-  {
-    q: "Where I See Myself",
-    a: "I'm genuinely excited about where AI agents fit into DevOps — not as a trend, but because I've already started building in that direction. I want to be the engineer who knows how to use these tools before they become mainstream. The goal is to build something meaningful at the intersection of AI and DevOps — whether that's an incident response bot, an intelligent pipeline, or something that doesn't exist yet. I want to be someone who shapes how a team operates, not just someone who maintains what's already there.",
-  },
-];
-
-const OFFSCREEN = [
-  { icon: "🏍️", title: "Weekend Rides", desc: "Out on the bike every weekend. Long routes, open roads, no Slack notifications." },
-  { icon: "🔧", title: "DIY Maintenance", desc: "I do my own servicing and repairs. Diagnosing a bike problem isn't too different from debugging prod." },
-  { icon: "🎬", title: "Bike Content", desc: "Film and edit my own riding videos. Ride, shoot, edit, repeat." },
-];
-
-const STATS = [
-  { num: "3", label: "Years in Prod" },
-  { num: "40%", label: "Faster Deploys" },
-  { num: "60%", label: "Faster Incidents" },
-  { num: "3", label: "Platforms Owned" },
-];
-
-// Moved outside component to avoid re-creation on every render
-const CMDS = [
-  "kubectl get pods --all-namespaces",
-  "terraform apply -auto-approve",
-  "ansible-playbook deploy.yml -i prod",
-  "docker stats --no-stream",
-];
-
-function AccordionItem({ q, a }) {
-  const [open, setOpen] = useState(false);
-  const contentRef = useRef(null);
-  const [contentHeight, setContentHeight] = useState(0);
-
-  useEffect(() => {
-    if (contentRef.current) {
-      setContentHeight(contentRef.current.scrollHeight);
-    }
-  }, [open, a]);
-
+function Tags({ items }) {
   return (
-    <div style={{
-      background: open ? "rgba(99,179,237,0.05)" : "rgba(255,255,255,0.025)",
-      border: `1px solid ${open ? "rgba(99,179,237,0.22)" : "rgba(255,255,255,0.07)"}`,
-      borderRadius: "14px", marginBottom: "10px",
-      overflow: "hidden", transition: "border-color 0.25s, background 0.25s",
-    }}>
-      <button
-        onClick={() => setOpen(p => !p)}
-        style={{
-          width: "100%", background: "none", border: "none",
-          color: open ? "#93c5fd" : "#64748b",
-          fontSize: "0.9rem", cursor: "pointer",
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          padding: "16px 20px",
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
-          fontWeight: 500, transition: "color 0.2s",
-        }}
-      >
-        <span>{q}</span>
-        <span style={{
-          fontSize: "1.3rem",
-          transform: open ? "rotate(45deg)" : "rotate(0)",
-          transition: "transform 0.3s",
-          color: "#63b3ed", lineHeight: 1, flexShrink: 0,
-        }}>+</span>
-      </button>
-      <div
-        ref={contentRef}
-        style={{
-          maxHeight: open ? `${contentHeight + 40}px` : 0,
-          overflow: "hidden",
-          transition: "max-height 0.35s ease",
-        }}
-      >
-        <div style={{ padding: "0 20px 18px", borderTop: "1px solid rgba(99,179,237,0.08)" }}>
-          <p style={{
-            color: "#94a3b8", fontSize: "0.9rem",
-            lineHeight: "1.85", marginTop: "14px",
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-          }}>{a}</p>
-        </div>
-      </div>
-    </div>
+    <ul className="tags" aria-label="Technologies">
+      {items.map((item) => (
+        <li key={item}>{item}</li>
+      ))}
+    </ul>
   );
 }
 
-export default function Portfolio() {
-  const [activeNav, setActiveNav] = useState("about");
-  const [typedCmd, setTypedCmd] = useState("");
-  const [cmdIdx, setCmdIdx] = useState(0);
-  const charRef = useRef(0);
-  const timerRef = useRef(null);
-
+export default function App() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [active, setActive] = useState("");
   useEffect(() => {
-    const cmd = CMDS[cmdIdx];
-    const tick = () => {
-      charRef.current++;
-      if (charRef.current <= cmd.length) {
-        setTypedCmd(cmd.slice(0, charRef.current));
-        timerRef.current = setTimeout(tick, 46);
-      } else {
-        timerRef.current = setTimeout(() => {
-          charRef.current = 0;
-          setTypedCmd("");
-          setCmdIdx(i => (i + 1) % CMDS.length);
-        }, 2500);
-      }
-    };
-    timerRef.current = setTimeout(tick, 500);
-    return () => clearTimeout(timerRef.current);
-  }, [cmdIdx]);
-
-  const goto = (id) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-    setActiveNav(id);
-  };
-
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setActive(entry.target.id);
+        });
+      },
+      { rootMargin: "-15% 0px -55% 0px" },
+    );
+    navigation.forEach(([id]) => {
+      const section = document.getElementById(id);
+      if (section) observer.observe(section);
+    });
+    return () => observer.disconnect();
+  }, []);
   return (
-    <div style={{ background: "#111827", minHeight: "100vh", color: "#e2e8f0", width: "100%", overflowX: "hidden" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500&display=swap');
-
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html { scroll-behavior: smooth; overflow-x: hidden; }
-
-        body { background: #111827; overflow-x: hidden; }
-
-        @keyframes blink    { 50% { opacity: 0; } }
-        @keyframes fadeUp   { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes pulse    { 0%,100%{opacity:1;} 50%{opacity:0.25;} }
-        @keyframes marqueeX { to { transform: translateX(-50%); } }
-        @keyframes shimmer  { 0%{background-position:200% center;} 100%{background-position:-200% center;} }
-
-        .f1{animation:fadeUp .55s ease both;}
-        .f2{animation:fadeUp .55s .1s ease both;}
-        .f3{animation:fadeUp .55s .2s ease both;}
-        .f4{animation:fadeUp .55s .3s ease both;}
-        .f5{animation:fadeUp .55s .4s ease both;}
-
-        .nav-btn{
-          font-family:'Fira Code',monospace;
-          font-size:.72rem;letter-spacing:.07em;
-          color:#475569;background:none;border:none;
-          cursor:pointer;padding:0;transition:color .2s;
-        }
-        .nav-btn:hover{color:#e2e8f0;}
-        .nav-btn.on{color:#63b3ed;}
-
-        .hero-name{
-          font-family:'Plus Jakarta Sans',sans-serif;
-          font-weight:700;
-          font-size:clamp(2.8rem,7.5vw,4.8rem);
-          line-height:1.06;letter-spacing:-.025em;color:#f1f5f9;
-        }
-        .hero-name .grad{
-          background:linear-gradient(100deg,#63b3ed 0%,#34d399 50%,#f472b6 100%);
-          background-size:200% auto;
-          -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-          background-clip:text;
-          animation:shimmer 5s linear infinite;
-        }
-
-        .terminal{
-          background:#0d1520;
-          border:1px solid rgba(99,179,237,0.18);
-          border-radius:12px;padding:14px 18px;
-          font-family:'Fira Code',monospace;font-size:.8rem;
-          color:#63b3ed;letter-spacing:.03em;min-height:46px;
-          box-shadow:0 0 28px rgba(99,179,237,0.06);
-        }
-        .terminal::before{content:'$ ';color:#2d4a6a;}
-        .tcur{
-          display:inline-block;width:7px;height:14px;
-          background:#63b3ed;vertical-align:middle;
-          animation:blink 1s step-end infinite;
-          margin-left:1px;border-radius:1px;
-        }
-
-        .stat-card{
-          background:#1a2436;
-          border:1px solid rgba(255,255,255,0.07);
-          border-radius:14px;padding:18px 14px;
-          flex:1;min-width:90px;text-align:center;
-          transition:border-color .2s,transform .2s,box-shadow .2s;
-          position:relative;overflow:hidden;
-        }
-        .stat-card::after{
-          content:'';position:absolute;top:0;left:0;right:0;height:1px;
-          background:linear-gradient(90deg,transparent,rgba(99,179,237,0.4),transparent);
-          opacity:0;transition:opacity .2s;
-        }
-        .stat-card:hover{border-color:rgba(99,179,237,0.25);transform:translateY(-3px);box-shadow:0 12px 30px rgba(0,0,0,0.2);}
-        .stat-card:hover::after{opacity:1;}
-        .stat-num{
-          font-family:'Plus Jakarta Sans',sans-serif;
-          font-size:1.9rem;font-weight:700;
-          background:linear-gradient(135deg,#63b3ed,#34d399);
-          -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-          display:block;line-height:1;margin-bottom:5px;
-        }
-        .stat-label{font-family:'Fira Code',monospace;font-size:.59rem;color:#475569;letter-spacing:.1em;display:block;}
-
-        .sl{font-family:'Fira Code',monospace;font-size:.65rem;color:#63b3ed;letter-spacing:.18em;margin-bottom:6px;opacity:.65;}
-        .stitle{
-          font-family:'Plus Jakarta Sans',sans-serif;
-          font-size:clamp(1.65rem,3.5vw,2.1rem);font-weight:700;
-          color:#f1f5f9;letter-spacing:-.02em;margin-bottom:1.8rem;
-          display:flex;align-items:center;gap:14px;
-        }
-        .stitle::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(99,179,237,0.15),transparent);}
-
-        .pcard{
-          background:#1a2436;
-          border:1px solid rgba(255,255,255,0.07);
-          border-radius:16px;padding:22px 24px;margin-bottom:12px;
-          transition:border-color .2s,transform .2s,box-shadow .2s;
-          position:relative;overflow:hidden;
-        }
-        .pcard::before{
-          content:'';position:absolute;inset:0;
-          background:radial-gradient(ellipse at top left,rgba(99,179,237,0.04) 0%,transparent 60%);
-          opacity:0;transition:opacity .3s;
-        }
-        .pcard:hover{border-color:rgba(99,179,237,0.22);transform:translateY(-2px);box-shadow:0 16px 40px rgba(0,0,0,0.22);}
-        .pcard:hover::before{opacity:1;}
-
-        .ptag{
-          display:inline-block;
-          background:rgba(99,179,237,0.08);border:1px solid rgba(99,179,237,0.18);
-          color:#93c5fd;
-          font-family:'Fira Code',monospace;font-size:.63rem;letter-spacing:.04em;
-          padding:3px 10px;border-radius:6px;margin-right:5px;margin-top:7px;
-          transition:background .2s,border-color .2s;
-        }
-        .ptag:hover{background:rgba(99,179,237,0.14);border-color:rgba(99,179,237,0.35);}
-
-        .wcard{
-          background:#1a2436;
-          border:1px solid rgba(255,255,255,0.07);
-          border-radius:16px;padding:24px;margin-bottom:14px;
-          position:relative;overflow:hidden;
-          transition:border-color .2s,box-shadow .2s;
-        }
-        .wcard:hover{border-color:rgba(255,255,255,0.12);box-shadow:0 12px 36px rgba(0,0,0,0.18);}
-        .waccent{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:16px 0 0 16px;}
-
-        .scat{
-          background:#1a2436;border:1px solid rgba(255,255,255,0.07);
-          border-radius:14px;padding:18px 20px;transition:border-color .2s;
-        }
-        .scat:hover{border-color:rgba(99,179,237,0.18);}
-        .si{
-          display:inline-block;
-          background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
-          color:#94a3b8;
-          font-family:'Fira Code',monospace;font-size:.7rem;
-          padding:5px 13px;border-radius:8px;margin-right:7px;margin-top:7px;
-          letter-spacing:.03em;
-          transition:color .2s,border-color .2s,background .2s;
-        }
-        .si:hover{color:#63b3ed;border-color:rgba(99,179,237,0.25);background:rgba(99,179,237,0.06);}
-
-        .off-card{
-          background:#1a2436;border:1px solid rgba(255,255,255,0.07);
-          border-radius:14px;padding:18px 20px;
-          display:flex;gap:16px;align-items:flex-start;margin-bottom:10px;
-          transition:border-color .2s,transform .2s;
-        }
-        .off-card:hover{border-color:rgba(99,179,237,0.2);transform:translateX(4px);}
-
-        .soc{
-          font-family:'Fira Code',monospace;font-size:.72rem;
-          color:#475569;text-decoration:none;letter-spacing:.06em;
-          margin-right:20px;transition:color .2s;
-        }
-        .soc:hover{color:#63b3ed;}
-
-        .divider{
-          border:none;height:1px;
-          background:linear-gradient(90deg,transparent,rgba(99,179,237,0.12),transparent);
-          margin:3.5rem 0;
-        }
-
-        .cta-section{
-          text-align:center;padding:3rem 0 5.5rem;
-        }
-        .cta-btn{
-          display:inline-block;
-          background:linear-gradient(135deg,#63b3ed,#34d399);
-          color:#0d1520;border:none;padding:14px 36px;
-          font-family:'Plus Jakarta Sans',sans-serif;font-size:.92rem;
-          font-weight:600;border-radius:12px;cursor:pointer;
-          text-decoration:none;letter-spacing:-.01em;
-          transition:opacity .2s,transform .2s,box-shadow .2s;
-        }
-        .cta-btn:hover{opacity:.9;transform:translateY(-2px);box-shadow:0 12px 32px rgba(99,179,237,0.2);}
-
-        .uptime-dot{
-          width:8px;height:8px;border-radius:50%;background:#34d399;
-          box-shadow:0 0 8px rgba(52,211,153,0.7);
-          animation:pulse 2s ease-in-out infinite;
-          display:inline-block;margin-right:8px;
-        }
-
-        ::-webkit-scrollbar{width:4px;}
-        ::-webkit-scrollbar-track{background:#111827;}
-        ::-webkit-scrollbar-thumb{background:rgba(99,179,237,0.2);border-radius:2px;}
-
-        /* SIDEBAR */
-        .sidebar{
-          width:200px;flex-shrink:0;
-          position:sticky;top:72px;
-          height:calc(100vh - 72px);
-          display:flex;flex-direction:column;gap:18px;
-          padding-top:5.5rem;
-        }
-        .sb-card{
-          background:#1a2436;
-          border:1px solid rgba(255,255,255,0.07);
-          border-radius:14px;padding:16px;
-        }
-        .sb-nav-btn{
-          display:block;width:100%;
-          background:none;border:none;
-          font-family:'Fira Code',monospace;
-          font-size:.68rem;letter-spacing:.07em;
-          color:#475569;cursor:pointer;
-          text-align:left;padding:7px 10px;
-          border-radius:8px;
-          transition:color .2s,background .2s;
-        }
-        .sb-nav-btn:hover{color:#e2e8f0;background:rgba(255,255,255,0.04);}
-        .sb-nav-btn.on{color:#63b3ed;background:rgba(99,179,237,0.07);}
-        .sb-link{
-          display:flex;align-items:center;gap:8px;
-          font-family:'Fira Code',monospace;font-size:.68rem;
-          color:#475569;text-decoration:none;letter-spacing:.05em;
-          padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);
-          transition:color .2s;
-        }
-        .sb-link:last-child{border-bottom:none;}
-        .sb-link:hover{color:#63b3ed;}
-
-        @media(max-width:900px){ .sidebar{display:none;} }
-      `}</style>
-
-      {/* SOFT GLOW */}
-      <div style={{
-        position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
-        background: `
-          radial-gradient(ellipse 70% 50% at 85% 0%,rgba(99,179,237,0.07) 0%,transparent 60%),
-          radial-gradient(ellipse 50% 40% at 0% 100%,rgba(244,114,182,0.05) 0%,transparent 60%)
-        `,
-      }} />
-
-      {/* FULL-WIDTH NAV */}
-      <nav style={{
-        position: "sticky", top: 0,
-        background: "rgba(17,24,39,0.9)",
-        backdropFilter: "blur(18px)",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-        padding: "16px 32px", zIndex: 100,
-        display: "flex", gap: "26px", alignItems: "center",
-      }}>
-        <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 700, fontSize: "1rem", color: "#63b3ed", marginRight: "4px", letterSpacing: "-.01em" }}>mj.</span>
-        {["about", "projects", "work", "stack", "more"].map(l => (
-          <button key={l} className={`nav-btn ${activeNav === l ? "on" : ""}`} onClick={() => goto(l)}>{l}</button>
-        ))}
-      </nav>
-
-      {/* TWO-COLUMN LAYOUT */}
-      <div style={{ display: "flex", maxWidth: "1080px", margin: "0 auto", padding: "0 24px", position: "relative", zIndex: 1, gap: "40px", alignItems: "flex-start" }}>
-
-        {/* MAIN CONTENT */}
-        <div style={{ flex: "1", minWidth: 0, maxWidth: "720px" }}>
-
-          {/* HERO */}
-          <section id="about" style={{ paddingTop: "5.5rem" }}>
-            <div className="f1" style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "1.6rem" }}>
-              <span className="uptime-dot" />
-              <span style={{ fontFamily: "'Fira Code',monospace", color: "#2d4a6a", fontSize: ".68rem", letterSpacing: ".12em" }}>
-                SYSTEM ONLINE · OPEN TO WORK
+    <>
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
+      <header className="site-header">
+        <div className="nav-wrap">
+          <a
+            className="wordmark"
+            href="#home"
+            aria-label="Manjunath Huddar, home"
+            onClick={() => setMenuOpen(false)}
+          >
+            mh<span>.</span>
+          </a>
+          <button
+            className="menu-toggle"
+            aria-expanded={menuOpen}
+            aria-controls="navigation"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            {menuOpen ? "Close menu" : "Menu"}
+          </button>
+          <nav
+            id="navigation"
+            aria-label="Main navigation"
+            className={menuOpen ? "navigation is-open" : "navigation"}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setMenuOpen(false);
+                document.querySelector(".menu-toggle")?.focus();
+              }
+            }}
+          >
+            {navigation.map(([id, label]) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                aria-current={active === id ? "location" : undefined}
+                onClick={() => setMenuOpen(false)}
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+          <a className="nav-contact" href={EMAIL}>
+            Let’s talk
+          </a>
+        </div>
+      </header>
+      <main id="main">
+        <section
+          className="hero page-width"
+          id="home"
+          aria-labelledby="hero-title"
+        >
+          <div className="hero-copy">
+            <p className="eyebrow">
+              <span className="status-dot" /> OPEN TO DEVOPS OPPORTUNITIES
+            </p>
+            <p className="hero-intro">
+              Manjunath Huddar <span>/ DevOps Engineer</span>
+            </p>
+            <h1 id="hero-title">
+              Reliable systems.
+              <br />
+              <span>Thoughtful</span>
+              <br />
+              automation.
+            </h1>
+            <p className="hero-description">
+              I build and operate cloud infrastructure, simplify releases, and
+              turn recurring problems into repeatable solutions. Now exploring
+              where AI can make that work better.
+            </p>
+            <div className="button-row">
+              <a className="button primary" href="#work">
+                Explore my work
+              </a>
+              <a
+                className="button secondary"
+                href={`${EMAIL}?subject=Resume%20request`}
+              >
+                Request résumé
+              </a>
+            </div>
+            <p className="hero-location">
+              Bengaluru, India <span>·</span> AWS / Linux / Automation
+            </p>
+          </div>
+          <div
+            className="hero-system"
+            aria-label="My engineering workflow: build, ship, observe, improve"
+          >
+            <div className="system-top">
+              <span className="mono">HOW I WORK</span>
+              <span className="system-icon" aria-hidden="true">
+                ⌘
               </span>
             </div>
-
-            <h1 className="hero-name f1">
-              hi, i'm<br /><span className="grad">Manjunath.</span>
-            </h1>
-
-            <div className="f2" style={{ marginTop: "1.5rem", marginBottom: "1.8rem" }}>
-              <div className="terminal">{typedCmd}<span className="tcur" /></div>
+            <div className="system-core">
+              <span className="core-icon" aria-hidden="true">
+                ⌘
+              </span>
+              <span>
+                From code
+                <br />
+                <strong>to confidence.</strong>
+              </span>
             </div>
-
-            <div className="f2" style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "2rem" }}>
-              {STATS.map(s => (
-                <div key={s.label} className="stat-card">
-                  <span className="stat-num">{s.num}</span>
-                  <span className="stat-label">{s.label}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="f3">
-              <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".97rem", lineHeight: "1.9", color: "#94a3b8", maxWidth: "600px" }}>
-                DevOps engineer with 3 years in real production environments. Built and owned infra for a{" "}
-                <span style={{ color: "#cbd5e1" }}>multiplayer gaming platform</span>, a{" "}
-                <span style={{ color: "#cbd5e1" }}>crypto wallet system</span>, and{" "}
-                <span style={{ color: "#cbd5e1" }}>enterprise RHEL servers</span>.
-              </p>
-              <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".97rem", lineHeight: "1.9", color: "#94a3b8", maxWidth: "600px", marginTop: ".9rem" }}>
-                Cut deployment time by <span style={{ color: "#63b3ed" }}>40%</span> at NIDEC.
-                Reduced incident resolution by <span style={{ color: "#34d399" }}>60%</span> at Block-Stars.
-                I automate the things I repeat, monitor everything in prod, and document so the next person doesn't have to guess.
-              </p>
-            </div>
-
-            <div className="f4" style={{ marginTop: "2rem" }}>
+            <div className="system-flow">
               {[
-                { l: "↗ GitHub", h: "https://github.com/Shubham070msd" },
-                { l: "↗ LinkedIn", h: "https://linkedin.com/in/manjunath-huddar-devops" },
-                { l: "↗ Email", h: "mailto:manjunathhuddar1999@gmail.com" },
-              ].map(s => <a key={s.l} href={s.h} target={s.h.startsWith("mailto") ? undefined : "_blank"} rel="noopener noreferrer" className="soc">{s.l}</a>)}
-            </div>
-          </section>
-
-          <hr className="divider" />
-
-          {/* PROJECTS */}
-          <section id="projects">
-            <p className="sl">// projects</p>
-            <h2 className="stitle">What I've Built</h2>
-            {PROJECTS.map(p => (
-              <div key={p.name} className="pcard">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "5px", flexWrap: "wrap", gap: "6px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <span style={{ fontSize: "1.1rem" }}>{p.icon}</span>
-                    <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#f1f5f9", fontSize: "1rem", fontWeight: 600 }}>{p.name}</span>
-                  </div>
-                  <span style={{ fontFamily: "'Fira Code',monospace", color: "#2d4a6a", fontSize: ".63rem" }}>{p.period}</span>
-                </div>
-                <p style={{ fontFamily: "'Fira Code',monospace", color: "#3d5a7a", fontSize: ".65rem", letterSpacing: ".06em", marginBottom: "10px" }}>{p.subtitle}</p>
-                <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".9rem", lineHeight: "1.75", color: "#94a3b8" }}>{p.desc}</p>
-                <div style={{ marginTop: "4px" }}>{p.tags.map(t => <span key={t} className="ptag">{t}</span>)}</div>
-              </div>
-            ))}
-          </section>
-
-          <hr className="divider" />
-
-          {/* WORK */}
-          <section id="work">
-            <p className="sl">// experience</p>
-            <h2 className="stitle">Where I've Worked</h2>
-            {WORK.map(w => (
-              <div key={w.company} className="wcard">
-                <div className="waccent" style={{ background: `linear-gradient(180deg,${w.color},transparent)` }} />
-                <div style={{ paddingLeft: "18px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "8px", marginBottom: "4px" }}>
-                    <div>
-                      <h3 style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#f1f5f9", fontSize: "1.05rem", fontWeight: 600 }}>{w.company}</h3>
-                      <p style={{ fontFamily: "'Fira Code',monospace", color: w.color, fontSize: ".7rem", letterSpacing: ".06em", opacity: .85, marginTop: "3px" }}>{w.role}</p>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <p style={{ fontFamily: "'Fira Code',monospace", color: "#2d4a6a", fontSize: ".68rem" }}>{w.period}</p>
-                      <p style={{ fontFamily: "'Fira Code',monospace", color: "#1e3a50", fontSize: ".63rem", marginTop: "3px" }}>{w.location}</p>
-                    </div>
-                  </div>
-                  <ul style={{ listStyle: "none", padding: 0, marginTop: "16px", display: "flex", flexDirection: "column", gap: "9px" }}>
-                    {w.bullets.map((b, i) => (
-                      <li key={i} style={{ display: "flex", gap: "11px", alignItems: "flex-start" }}>
-                        <span style={{ color: w.color, opacity: .4, marginTop: "6px", fontSize: ".45rem", flexShrink: 0 }}>◆</span>
-                        <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".9rem", lineHeight: "1.72", color: "#94a3b8" }}>{b}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ))}
-          </section>
-
-          <hr className="divider" />
-
-          {/* STACK */}
-          <section id="stack">
-            <p className="sl">// technologies</p>
-            <h2 className="stitle">My Stack</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(310px,1fr))", gap: "12px" }}>
-              {STACK.map(s => (
-                <div key={s.cat} className="scat">
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
-                    <span style={{ fontSize: ".95rem" }}>{s.icon}</span>
-                    <span style={{ fontFamily: "'Fira Code',monospace", color: "#3d5a7a", fontSize: ".63rem", letterSpacing: ".16em" }}>{s.cat.toUpperCase()}</span>
-                  </div>
-                  <div>{s.items.map(i => <span key={i} className="si">{i}</span>)}</div>
+                ["⌥", "Build", "Reproducible environments", "IaC"],
+                ["▧", "Ship", "Repeatable releases", "CI/CD"],
+                ["⌁", "Observe", "Signals with context", "OPS"],
+                ["✳", "Improve", "Automate what repeats", "AI"],
+              ].map(([icon, title, subtitle, tag]) => (
+                <div key={title}>
+                  <span className="flow-icon" aria-hidden="true">
+                    {icon}
+                  </span>
+                  <p>
+                    {title}
+                    <span>{subtitle}</span>
+                  </p>
+                  <span className="flow-tag">{tag}</span>
                 </div>
               ))}
             </div>
-          </section>
-
-          <hr className="divider" />
-
-          {/* ACHIEVEMENTS */}
-          <section id="achievements">
-            <p className="sl">// achievements</p>
-            <h2 className="stitle">Certifications & Badges</h2>
-
-            <div style={{
-              background: "linear-gradient(135deg, rgba(99,179,237,0.06) 0%, rgba(52,211,153,0.04) 100%)",
-              border: "1px solid rgba(99,179,237,0.2)",
-              borderRadius: "16px", padding: "24px",
-              marginBottom: "16px", position: "relative", overflow: "hidden",
-            }}>
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,rgba(99,179,237,0.5),rgba(52,211,153,0.5),transparent)" }} />
-
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-                    <span style={{ fontSize: "1.6rem" }}>🏆</span>
-                    <div>
-                      <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#f1f5f9", fontSize: "1.05rem", fontWeight: 700 }}>Google Cloud Arcade</p>
-                      <p style={{ fontFamily: "'Fira Code',monospace", color: "#34d399", fontSize: "0.7rem", letterSpacing: "0.08em", marginTop: "2px" }}>CHAMPION TIER · GOLD LEAGUE</p>
+            <div className="system-bottom">
+              <span aria-hidden="true">$</span> make the next incident easier.
+            </div>
+          </div>
+        </section>
+        <div className="expertise-strip">
+          <div className="page-width">
+            <p>
+              Built around
+              <br />
+              <strong>production experience</strong>
+            </p>
+            <span>Cloud infrastructure</span>
+            <span>Delivery pipelines</span>
+            <span>Observability</span>
+            <span>AI-assisted operations</span>
+          </div>
+        </div>
+        <section
+          className="section page-width"
+          id="work"
+          aria-labelledby="work-title"
+        >
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">SELECTED WORK</p>
+              <h2 id="work-title">
+                Less friction.
+                <br />
+                More reliable delivery.
+              </h2>
+            </div>
+            <p>
+              A few systems and tools I’ve worked on, with the problem and my
+              contribution up front.
+            </p>
+          </div>
+          <div className="projects-grid">
+            {projects.map((project) => (
+              <article className="project" key={project.title}>
+                <div
+                  className="project-diagram"
+                  aria-label={project.diagram.join(" to ")}
+                >
+                  {project.diagram.map((step, index) => (
+                    <div key={step}>
+                      <span
+                        className={`diagram-symbol symbol-${index}`}
+                        aria-hidden="true"
+                      >
+                        {["⌥", "▧", "◎"][index]}
+                      </span>
+                      <span>{step}</span>
                     </div>
-                  </div>
-                  <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: "0.88rem", color: "#94a3b8", lineHeight: "1.7", maxWidth: "440px" }}>
-                    Completed the Google Cloud Arcade program and reached Champion tier — the highest level. Earned through consistent hands-on labs, challenges, and quizzes across Google Cloud services.
-                  </p>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-                  <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: "2.2rem", fontWeight: 700, background: "linear-gradient(135deg,#fbbf24,#f59e0b)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1 }}>69K+</span>
-                  <span style={{ fontFamily: "'Fira Code',monospace", fontSize: "0.58rem", color: "#475569", letterSpacing: "0.1em" }}>POINTS</span>
-                  <div style={{ marginTop: "6px", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: "20px", padding: "3px 12px" }}>
-                    <span style={{ fontFamily: "'Fira Code',monospace", fontSize: "0.62rem", color: "#fbbf24", letterSpacing: "0.08em" }}>70+ BADGES</span>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ marginTop: "18px", paddingTop: "16px", borderTop: "1px solid rgba(99,179,237,0.08)" }}>
-                <p style={{ fontFamily: "'Fira Code',monospace", fontSize: "0.6rem", color: "#3d5a7a", letterSpacing: "0.14em", marginBottom: "10px" }}>HIGHLIGHTS</p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "7px" }}>
-                  {[
-                    "Implement DevOps Workflows in GCP",
-                    "CI/CD Pipelines on Google Cloud",
-                    "Manage Kubernetes in GCP",
-                    "Terraform on Google Cloud",
-                    "Deploy Kubernetes Applications",
-                    "Cloud Security Fundamentals",
-                    "Prompt Design in Vertex AI",
-                    "Introduction to Generative AI",
-                  ].map(b => (
-                    <span key={b} style={{
-                      display: "inline-block",
-                      background: "rgba(99,179,237,0.06)",
-                      border: "1px solid rgba(99,179,237,0.14)",
-                      color: "#7dd3fc",
-                      fontFamily: "'Fira Code',monospace",
-                      fontSize: "0.62rem", letterSpacing: "0.03em",
-                      padding: "4px 10px", borderRadius: "6px",
-                    }}>{b}</span>
                   ))}
                 </div>
-              </div>
-
-              <a
-                href="https://www.skills.google/public_profiles/36f94e84-4845-4a29-a5ec-d10c6e628f0e"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: "6px",
-                  marginTop: "16px",
-                  fontFamily: "'Fira Code',monospace", fontSize: "0.7rem",
-                  color: "#63b3ed", textDecoration: "none", letterSpacing: "0.06em",
-                  transition: "color 0.2s",
-                }}
-                onMouseEnter={e => e.currentTarget.style.color = "#93c5fd"}
-                onMouseLeave={e => e.currentTarget.style.color = "#63b3ed"}
-              >
-                ↗ View all badges on Google Skills Boost
-              </a>
-            </div>
-          </section>
-
-          <hr className="divider" />
-
-          {/* WAR STORIES */}
-          <section id="more">
-            <p className="sl">// incident log</p>
-            <h2 className="stitle">What Broke & How I Fixed It</h2>
-            <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".92rem", color: "#64748b", lineHeight: "1.8", marginBottom: "2rem" }}>
-              Real incidents from prod. The ones that made me a better engineer.
-            </p>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "3rem" }}>
-              {[
-                {
-                  sev: "P1", sevColor: "#f87171", sevBg: "rgba(248,113,113,0.08)", sevBorder: "rgba(248,113,113,0.2)",
-                  time: "3AM · 2024", platform: "Aslan · AWS",
-                  title: "MongoDB CPU spiked to 100% — gaming platform down",
-                  what: "Players started getting dropped mid-game. MongoDB CPU hit 100%, queries timing out across all game services.",
-                  fix: "Identified a missing index on a high-frequency query via slow query logs. Added compound index, CPU dropped to 18% in under 3 minutes. Added query performance alerts to Zabbix so it never snuck up on us again.",
-                },
-                {
-                  sev: "P2", sevColor: "#fb923c", sevBg: "rgba(251,146,60,0.08)", sevBorder: "rgba(251,146,60,0.2)",
-                  time: "Working hours · 2024", platform: "AIW/TRIA · Cloudflare",
-                  title: "DDoS attack on crypto wallet API endpoints",
-                  what: "Sudden spike in traffic — API response times went from 80ms to 8s. Wallet transactions failing for real users.",
-                  fix: "Cloudflare WAF rate limiting rules deployed within minutes. Identified attack patterns and blocked malicious IPs. Implemented request fingerprinting. Zero data loss, service restored in under 15 minutes.",
-                },
-                {
-                  sev: "P2", sevColor: "#fb923c", sevBg: "rgba(251,146,60,0.08)", sevBorder: "rgba(251,146,60,0.2)",
-                  time: "Deploy day · 2023", platform: "Kingpot · Jenkins",
-                  title: "Bad deploy took down casino game servers",
-                  what: "A Jenkins pipeline pushed a config change to prod without proper validation. Game servers started crashing on startup.",
-                  fix: "Rolled back via pipeline within 4 minutes. Added a mandatory staging validation stage to the pipeline — every config change now runs smoke tests before it touches prod. Deploy failures dropped 50% after this.",
-                },
-                {
-                  sev: "P3", sevColor: "#34d399", sevBg: "rgba(52,211,153,0.08)", sevBorder: "rgba(52,211,153,0.2)",
-                  time: "Night shift · 2024", platform: "NIDEC · RHEL",
-                  title: "PQM database backup script silently failing for weeks",
-                  what: "Routine audit revealed backups hadn't run in 18 days. The script was exiting with code 0 even on failure — no alerts triggered.",
-                  fix: "Rewrote the backup script with proper exit code handling, added checksum validation, and wired failure alerts to email. Also added a daily backup verification cron job. Now it proves it worked, not just that it ran.",
-                },
-              ].map((inc, i) => (
-                <div key={i} style={{
-                  background: "#1a2436", border: "1px solid rgba(255,255,255,0.07)",
-                  borderRadius: "16px", padding: "20px 22px",
-                  borderLeft: `3px solid ${inc.sevColor}`,
-                  transition: "border-color 0.2s, box-shadow 0.2s",
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 8px 30px rgba(0,0,0,0.2)`; e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "8px", marginBottom: "10px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{
-                        fontFamily: "'Fira Code',monospace", fontSize: "0.58rem",
-                        letterSpacing: "0.1em", padding: "2px 8px", borderRadius: "5px",
-                        background: inc.sevBg, border: `1px solid ${inc.sevBorder}`,
-                        color: inc.sevColor, fontWeight: 500,
-                      }}>{inc.sev}</span>
-                      <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#f1f5f9", fontSize: "0.95rem", fontWeight: 600 }}>{inc.title}</span>
+                <div className="project-content">
+                  <p className="eyebrow">{project.category}</p>
+                  <h3>{project.title}</h3>
+                  <p className="project-description">{project.description}</p>
+                  <Tags items={project.tags} />
+                  <details>
+                    <summary>
+                      Behind the project<span aria-hidden="true">+</span>
+                    </summary>
+                    <div className="project-detail">
+                      <p className="detail-label">{project.type}</p>
+                      <h4>The problem</h4>
+                      <p>{project.context}</p>
+                      <h4>My contribution</h4>
+                      <p>{project.approach}</p>
+                      <p className="project-note">{project.note}</p>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <p style={{ fontFamily: "'Fira Code',monospace", fontSize: "0.62rem", color: "#2d4a6a" }}>{inc.time}</p>
-                      <p style={{ fontFamily: "'Fira Code',monospace", fontSize: "0.6rem", color: "#1e3a50", marginTop: "2px" }}>{inc.platform}</p>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                    <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-                      <span style={{ fontFamily: "'Fira Code',monospace", fontSize: "0.6rem", color: "#f87171", letterSpacing: "0.08em", flexShrink: 0, marginTop: "3px", opacity: 0.7 }}>WHAT</span>
-                      <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: "0.87rem", color: "#64748b", lineHeight: "1.7" }}>{inc.what}</p>
-                    </div>
-                    <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-                      <span style={{ fontFamily: "'Fira Code',monospace", fontSize: "0.6rem", color: "#34d399", letterSpacing: "0.08em", flexShrink: 0, marginTop: "3px", opacity: 0.7 }}>FIX</span>
-                      <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: "0.87rem", color: "#94a3b8", lineHeight: "1.7" }}>{inc.fix}</p>
-                    </div>
-                  </div>
+                  </details>
                 </div>
-              ))}
-            </div>
-
-            {/* CURRENTLY EXPLORING */}
-            <div style={{
-              background: "rgba(99,179,237,0.04)",
-              border: "1px solid rgba(99,179,237,0.12)",
-              borderRadius: "16px", padding: "20px 22px", marginBottom: "2rem",
-            }}>
-              <p style={{ fontFamily: "'Fira Code',monospace", fontSize: ".62rem", color: "#63b3ed", letterSpacing: ".14em", opacity: .65, marginBottom: "14px" }}>CURRENTLY EXPLORING</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "11px" }}>
-                {[
-                  { icon: "🤖", text: "AI agents and agentic workflows — tools that can reason, plan, and take actions on their own" },
-                  { icon: "⚙️", text: "How LLMs can help with incident analysis and automated runbook execution" },
-                  { icon: "🔬", text: "Self-healing infrastructure — systems that detect and fix issues themselves" },
-                ].map((item, i) => (
-                  <div key={i} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                    <span style={{ fontSize: "1rem", flexShrink: 0 }}>{item.icon}</span>
-                    <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".9rem", color: "#64748b", lineHeight: "1.65" }}>{item.text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* OFF-SCREEN — moved here from hero */}
-            <div style={{ marginBottom: "2rem" }}>
-              <p style={{ fontFamily: "'Fira Code',monospace", color: "#2d4a6a", fontSize: ".62rem", letterSpacing: ".14em", marginBottom: "1rem" }}>OFF-SCREEN</p>
-              <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: ".9rem", color: "#64748b", lineHeight: "1.7", marginBottom: "14px" }}>
-                When I'm not automating infra, I'm out on two wheels —
-                <span style={{ color: "#94a3b8" }}> riding, wrenching, and filming it all.</span>
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {OFFSCREEN.map((item, i) => (
-                  <div key={i} className="off-card">
-                    <span style={{ fontSize: "1.3rem", flexShrink: 0, marginTop: "1px" }}>{item.icon}</span>
-                    <div>
-                      <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#e2e8f0", fontSize: ".88rem", fontWeight: 600, marginBottom: "3px" }}>{item.title}</p>
-                      <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#64748b", fontSize: ".83rem", lineHeight: "1.65" }}>{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <p style={{ fontFamily: "'Fira Code',monospace", color: "#2d4a6a", fontSize: ".62rem", letterSpacing: ".14em", marginBottom: "1.2rem" }}>MORE ABOUT ME</p>
-            {MISC.map(m => <AccordionItem key={m.q} q={m.q} a={m.a} />)}
-          </section>
-
-          <hr className="divider" />
-
-          {/* CTA — replaced newsletter */}
-          <section className="cta-section">
-            <p className="sl" style={{ justifyContent: "center" }}>// let's connect</p>
-            <h3 style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#f1f5f9", fontSize: "1.55rem", fontWeight: 700, marginTop: "10px", marginBottom: "10px", letterSpacing: "-.02em" }}>
-              DevOps engineer exploring how AI can make infra smarter.
-            </h3>
-            <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#64748b", fontSize: ".92rem", lineHeight: "1.7", marginBottom: "2rem", maxWidth: "500px", margin: "0 auto 2rem" }}>
-              I'm open to DevOps, AI roles where I can own systems end-to-end and bring AI into the workflow.
-            </p>
-            <a href="mailto:manjunathhuddar1999@gmail.com" className="cta-btn">
-              Let's Talk →
-            </a>
-            <div style={{ marginTop: "1.2rem", display: "flex", justifyContent: "center", gap: "20px" }}>
-              {[
-                { l: "GitHub", h: "https://github.com/Shubham070msd" },
-                { l: "LinkedIn", h: "https://linkedin.com/in/manjunath-huddar-devops" },
-              ].map(s => (
-                <a key={s.l} href={s.h} target="_blank" rel="noopener noreferrer" className="soc" style={{ margin: 0 }}>{`↗ ${s.l}`}</a>
-              ))}
-            </div>
-          </section>
-
-          {/* FOOTER */}
-          <div style={{
-            borderTop: "1px solid rgba(255,255,255,0.05)",
-            padding: "1.5rem 0",
-            display: "flex", justifyContent: "space-between",
-            alignItems: "center", flexWrap: "wrap", gap: "8px",
-          }}>
-            <span style={{ fontFamily: "'Fira Code',monospace", color: "#1e3a50", fontSize: ".7rem" }}>Manjunath Huddar · DevOps Engineer</span>
-            <span style={{ fontFamily: "'Fira Code',monospace", color: "#1a2e42", fontSize: ".68rem" }}>{"// automate the boring parts"}</span>
-          </div>
-
-        </div>{/* end main content */}
-
-        {/* STICKY SIDEBAR */}
-        <aside className="sidebar">
-
-          {/* Neofetch-style System Info */}
-          <div className="sb-card" style={{ fontFamily: "'Fira Code',monospace", fontSize: ".62rem", lineHeight: "1.9" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
-              <span style={{ color: "#63b3ed", fontSize: ".7rem" }}>mj@devops</span>
-              <span style={{ color: "#2d4a6a" }}>~</span>
-              <span style={{ color: "#34d399", fontSize: ".6rem" }}>$ neofetch</span>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
-              {[
-                { key: "role", val: "DevOps Engineer" },
-                { key: "loc", val: "Bengaluru, IN" },
-                { key: "exp", val: "3 yrs prod" },
-                { key: "at", val: "NIDEC Pvt Ltd" },
-                { key: "focus", val: "DevOps + AI" },
-                { key: "status", val: "open to work" },
-              ].map(r => (
-                <div key={r.key} style={{ display: "flex", gap: "4px" }}>
-                  <span style={{ color: "#63b3ed", minWidth: "48px" }}>{r.key}:</span>
-                  <span style={{ color: "#94a3b8" }}>{r.val}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ display: "flex", gap: "4px", marginTop: "10px" }}>
-              {["#63b3ed", "#34d399", "#f472b6", "#fbbf24", "#fb923c", "#a78bfa"].map(c => (
-                <span key={c} style={{ width: "10px", height: "10px", borderRadius: "2px", background: c }} />
-              ))}
-            </div>
-          </div>
-
-          {/* Resume Download */}
-          <div className="sb-card" style={{ textAlign: "center" }}>
-            <p style={{ fontFamily: "'Fira Code',monospace", fontSize: ".55rem", color: "#2d4a6a", letterSpacing: ".16em", marginBottom: "10px" }}>RESUME</p>
-            <a href="/resume.pdf" download style={{
-              display: "inline-flex", alignItems: "center", gap: "6px",
-              background: "rgba(99,179,237,0.08)",
-              border: "1px solid rgba(99,179,237,0.2)",
-              color: "#63b3ed", padding: "8px 16px",
-              fontFamily: "'Fira Code',monospace", fontSize: ".68rem",
-              borderRadius: "8px", textDecoration: "none", letterSpacing: ".04em",
-              transition: "background .2s, border-color .2s, transform .2s",
-              width: "100%", justifyContent: "center",
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(99,179,237,0.14)"; e.currentTarget.style.borderColor = "rgba(99,179,237,0.4)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "rgba(99,179,237,0.08)"; e.currentTarget.style.borderColor = "rgba(99,179,237,0.2)"; e.currentTarget.style.transform = "translateY(0)"; }}
-            >↓ Download PDF</a>
-          </div>
-
-          {/* Social */}
-          <div className="sb-card">
-            <p style={{ fontFamily: "'Fira Code',monospace", fontSize: ".55rem", color: "#2d4a6a", letterSpacing: ".16em", marginBottom: "10px" }}>CONNECT</p>
-            {[
-              { label: "GitHub", href: "https://github.com/Shubham070msd", icon: "⌥" },
-              { label: "LinkedIn", href: "https://linkedin.com/in/manjunath-huddar-devops", icon: "in" },
-              { label: "Email", href: "mailto:manjunathhuddar1999@gmail.com", icon: "@" },
-            ].map(s => (
-              <a key={s.label} href={s.href} target={s.href.startsWith("mailto") ? undefined : "_blank"} rel="noopener noreferrer" className="sb-link">
-                <span style={{ fontFamily: "'Fira Code',monospace", fontSize: ".6rem", color: "#2d4a6a", width: "16px", textAlign: "center" }}>{s.icon}</span>
-                {s.label}
-              </a>
+              </article>
             ))}
           </div>
-
-        </aside>
-
-      </div>{/* end two-column */}
-    </div>
+        </section>
+        <section className="lab-section" id="lab" aria-labelledby="lab-title">
+          <div className="page-width section">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">THE AI OPERATIONS LAB</p>
+                <h2 id="lab-title">
+                  From noisy logs
+                  <br />
+                  to a useful first question.
+                </h2>
+              </div>
+              <div>
+                <span className="pill">New · local prototype</span>
+                <p>
+                  Incident Brief turns a log excerpt into a structured
+                  investigation draft using a local LLM. Evidence first. An
+                  engineer makes the call.
+                </p>
+              </div>
+            </div>
+            <IncidentLab />
+            <div className="lab-footer">
+              <p>
+                <strong>Python + Ollama</strong>
+                <span>
+                  Structured output · Source-line checks · No command execution
+                </span>
+              </p>
+              <a
+                className="text-link"
+                href={`${SOURCE}/tools/incident-triage`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Explore the CLI source
+              </a>
+            </div>
+          </div>
+        </section>
+        <section
+          className="section page-width"
+          id="field-notes"
+          aria-labelledby="notes-title"
+        >
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">NOTES FROM PRODUCTION</p>
+              <h2 id="notes-title">
+                Fix the issue.
+                <br />
+                Improve the system.
+              </h2>
+            </div>
+            <p>
+              Two examples of the work I enjoy: finding the cause, recovering
+              service, and making the next failure easier to catch.
+            </p>
+          </div>
+          <div className="notes-grid">
+            <article className="field-note">
+              <span className="note-category">DATABASE / ASLAN</span>
+              <h3>When the database became the bottleneck</h3>
+              <p>
+                Game requests were timing out while MongoDB CPU spiked.
+                Slow-query logs pointed to a missing index on a frequently used
+                query.
+              </p>
+              <div className="note-takeaway">
+                <span>THE FOLLOW-THROUGH</span>
+                <p>
+                  Added a compound index and query-performance alerts in Zabbix,
+                  so the fix also improved detection.
+                </p>
+              </div>
+            </article>
+            <article className="field-note">
+              <span className="note-category">DELIVERY / KINGPOT</span>
+              <h3>A rollback is only half the fix</h3>
+              <p>
+                A configuration change caused game services to crash after
+                deployment. I rolled the release back through the Jenkins
+                pipeline.
+              </p>
+              <div className="note-takeaway">
+                <span>THE FOLLOW-THROUGH</span>
+                <p>
+                  Added staging validation and smoke tests before production
+                  deployment to catch that class of failure earlier.
+                </p>
+              </div>
+            </article>
+          </div>
+        </section>
+        <section
+          className="section page-width experience-section"
+          id="experience"
+          aria-labelledby="experience-title"
+        >
+          <div className="experience-intro">
+            <p className="eyebrow">EXPERIENCE</p>
+            <h2 id="experience-title">
+              Hands on.
+              <br />
+              End to end.
+            </h2>
+            <p>
+              From gaming and crypto platforms to enterprise application
+              servers.
+            </p>
+            <a
+              className="text-link"
+              href="https://linkedin.com/in/manjunath-huddar-devops"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Connect on LinkedIn
+            </a>
+          </div>
+          <div className="timeline">
+            <article>
+              <div className="job-heading">
+                <div>
+                  <h3>NIDEC Pvt Ltd</h3>
+                  <p>Software Engineer · DevOps</p>
+                </div>
+                <span>Aug 2025 – Present</span>
+              </div>
+              <p className="job-location">Bengaluru, India</p>
+              <ul>
+                <li>
+                  Maintain PQM application servers on RHEL and automate release
+                  steps with Jenkins.
+                </li>
+                <li>
+                  Automate database backup and restore workflows with Shell
+                  scripts.
+                </li>
+                <li>
+                  Write runbooks for application setup, upgrades, and
+                  troubleshooting.
+                </li>
+              </ul>
+            </article>
+            <article>
+              <div className="job-heading">
+                <div>
+                  <h3>Block-Stars Pvt Ltd</h3>
+                  <p>DevOps Engineer</p>
+                </div>
+                <span>2023 – 2025</span>
+              </div>
+              <p className="job-location">Seoul, South Korea · Remote</p>
+              <ul>
+                <li>
+                  Built Jenkins and GitLab CI pipelines for gaming and crypto
+                  platforms.
+                </li>
+                <li>
+                  Managed AWS environments and MongoDB replication, monitoring,
+                  and backups.
+                </li>
+                <li>
+                  Connected dashboards, alerting, and operational scripts to
+                  support incident response.
+                </li>
+              </ul>
+            </article>
+          </div>
+        </section>
+        <section
+          className="section page-width toolkit-section"
+          aria-labelledby="toolkit-title"
+        >
+          <div>
+            <p className="eyebrow">THE TOOLKIT</p>
+            <h2 id="toolkit-title">Tools with a purpose.</h2>
+            <p className="muted">The stack behind the work above.</p>
+          </div>
+          <div className="toolkit">
+            {[
+              [
+                "Provision & configure",
+                "AWS · Azure · Linux · Terraform · Ansible",
+              ],
+              [
+                "Build & deliver",
+                "Docker · Jenkins · GitLab CI · Shell · Python",
+              ],
+              [
+                "Observe & investigate",
+                "Prometheus · Grafana · ELK · Zabbix · MongoDB",
+              ],
+              ["Explore with AI", "Ollama · LLaMA3 · Structured LLM output"],
+            ].map(([title, text]) => (
+              <div key={title}>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </div>
+            ))}
+          </div>
+          <a
+            className="learning-link"
+            href="https://www.skills.google/public_profiles/36f94e84-4845-4a29-a5ec-d10c6e628f0e"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span>CONTINUOUS LEARNING</span>
+            <p>Hands-on Google Cloud labs & skill badges</p>
+            <strong>View learning profile</strong>
+          </a>
+        </section>
+        <section
+          className="contact-section page-width"
+          id="contact"
+          aria-labelledby="contact-title"
+        >
+          <div>
+            <p className="eyebrow">LET’S BUILD SOMETHING RELIABLE</p>
+            <h2 id="contact-title">
+              Your next release.
+              <br />
+              <span>A little less stressful.</span>
+            </h2>
+            <p>
+              I’m open to DevOps roles where I can own infrastructure, improve
+              delivery, and explore practical AI tooling.
+            </p>
+            <a className="button primary" href={EMAIL}>
+              Let’s talk
+            </a>
+          </div>
+          <aside className="offscreen">
+            <span className="bike-mark" aria-hidden="true">
+              ◎—◎
+            </span>
+            <p className="eyebrow">AWAY FROM THE TERMINAL</p>
+            <h3>Usually on two wheels.</h3>
+            <p>
+              Weekend rides, DIY bike maintenance, and filming the roads along
+              the way.
+            </p>
+          </aside>
+        </section>
+      </main>
+      <footer className="page-width">
+        <a className="wordmark" href="#home">
+          mh<span>.</span>
+        </a>
+        <p>
+          Manjunath Huddar <span>· DevOps Engineer</span>
+        </p>
+        <div>
+          <a href={GITHUB} target="_blank" rel="noreferrer">
+            GitHub
+          </a>
+          <a
+            href="https://linkedin.com/in/manjunath-huddar-devops"
+            target="_blank"
+            rel="noreferrer"
+          >
+            LinkedIn
+          </a>
+          <a href={EMAIL}>Email</a>
+        </div>
+      </footer>
+    </>
   );
 }
