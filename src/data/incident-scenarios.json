@@ -1,0 +1,68 @@
+[
+  {
+    "id": "database",
+    "label": "Slow database",
+    "logs": [
+      "09:41:02 api WARN request_latency_ms=4800 route=/sessions",
+      "09:41:04 mongo WARN query_ms=4200 plan=COLLSCAN collection=sessions",
+      "09:41:05 mongo INFO docsExamined=184200 nreturned=12",
+      "09:41:06 host WARN mongo_cpu_percent=97",
+      "09:41:08 api ERROR upstream_timeout service=sessions"
+    ],
+    "brief": {
+      "summary": "A collection scan may be contributing to slow requests.",
+      "hypothesis": "The query examines many documents to return a small result. High database CPU and upstream timeouts occur in the same window.",
+      "evidence_lines": [2, 3, 4, 5],
+      "next_checks": [
+        "Inspect the slow query and its execution plan.",
+        "Compare query filters and sort order with existing indexes.",
+        "Check recent query or traffic changes before selecting a fix."
+      ],
+      "uncertainty": "These logs do not prove an index is missing. Query shape, index definitions, and traffic history are still needed."
+    }
+  },
+  {
+    "id": "deployment",
+    "label": "Failed release",
+    "logs": [
+      "14:20:00 deploy INFO release=api-v42 rollout_started",
+      "14:20:11 api ERROR required_config_missing key=DATABASE_URL",
+      "14:20:12 container WARN exit_code=1 restart_count=3",
+      "14:20:14 health ERROR readiness_probe_failed port=8080",
+      "14:20:19 deploy WARN available_replicas=0 desired_replicas=3"
+    ],
+    "brief": {
+      "summary": "The new release appears to be missing required configuration.",
+      "hypothesis": "The application reports a missing DATABASE_URL after rollout, then exits and fails readiness checks. No replicas are available in this excerpt.",
+      "evidence_lines": [1, 2, 3, 4, 5],
+      "next_checks": [
+        "Compare configuration references with the last successful release.",
+        "Check whether the required secret is mounted in this environment without printing its value.",
+        "Review rollback options and service impact with the release owner."
+      ],
+      "uncertainty": "The excerpt does not show why configuration is absent or whether the previous version is still serving traffic."
+    }
+  },
+  {
+    "id": "backup",
+    "label": "Backup failure",
+    "logs": [
+      "02:00:00 backup INFO scheduled_job_started database=app",
+      "02:00:03 storage ERROR write_failed path=/backups reason=ENOSPC",
+      "02:00:04 backup WARN archive_bytes=0",
+      "02:00:05 scheduler INFO job_exit_code=0",
+      "08:00:00 verify ERROR last_verified_backup_age_hours=49"
+    ],
+    "brief": {
+      "summary": "A storage failure may be hidden by a successful job exit.",
+      "hypothesis": "The backup write reports insufficient space and produces an empty archive, yet the scheduler records exit code zero. The last verified backup is 49 hours old.",
+      "evidence_lines": [2, 3, 4, 5],
+      "next_checks": [
+        "Inspect backup volume capacity and retention policy.",
+        "Trace how the script propagates write failures to its exit status.",
+        "Verify the last usable backup with an isolated restore test."
+      ],
+      "uncertainty": "The logs do not establish whether another backup destination or recovery mechanism exists."
+    }
+  }
+]
